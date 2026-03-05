@@ -3,154 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROE Visual | 深度逻辑配置器</title>
+    <title>ROE Visual | Professional System Designer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --roe-gold: #c5a059; --roe-black: #0b0b0b; --card-bg: #161616; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--roe-black); color: #e0e0e0; display: flex; justify-content: center; padding: 20px; margin: 0; }
-        .wrapper { width: 100%; max-width: 800px; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
-        @media (max-width: 700px) { .wrapper { grid-template-columns: 1fr; } }
+        :root { --gold: #c5a059; --bg: #0b0b0b; --panel: #161616; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #ccc; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+        .card { background: var(--panel); padding: 25px; border-radius: 4px; border: 1px solid #222; }
+        h2, h3 { color: var(--gold); text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
+        h3 { font-size: 14px; margin-top: 20px; }
         
-        .panel { background: var(--card-bg); padding: 25px; border-radius: 8px; border: 1px solid #222; }
-        h3 { color: var(--roe-gold); font-size: 14px; margin-top: 0; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { display: block; font-size: 11px; color: #777; margin-bottom: 5px; }
+        select, input { width: 100%; background: #000; border: 1px solid #333; padding: 10px; color: #fff; border-radius: 2px; }
         
-        .input-group { margin-bottom: 20px; }
-        label { display: block; font-size: 11px; color: #888; margin-bottom: 8px; }
-        select, input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; border-radius: 4px; color: #fff; font-size: 14px; box-sizing: border-box; }
+        .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; }
+        .spec-item { padding: 8px; background: #0f0f0f; border-radius: 2px; display: flex; justify-content: space-between; }
+        .spec-item b { color: var(--gold); }
+
+        .equipment-list { font-size: 12px; margin-top: 15px; color: #aaa; line-height: 1.6; }
+        .warning { color: #ff4444; font-size: 11px; margin-top: 5px; display: none; }
         
-        .result-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; }
-        .result-item b { color: var(--roe-gold); }
-        
-        .sidebar { background: #1a1a1a; padding: 20px; border-radius: 8px; border-left: 4px solid var(--roe-gold); }
-        .topo-graph { background: #000; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #4af2a1; line-height: 1.6; margin-top: 15px; }
-        
-        .btn-export { width: 100%; background: var(--roe-gold); color: #000; border: none; padding: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 20px; }
-        .btn-export:hover { background: #d4af6a; }
+        .btn-main { width: 100%; background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; margin-top: 20px; text-transform: uppercase; }
+        .topo-box { font-family: monospace; font-size: 11px; background: #000; color: #4af2a1; padding: 15px; border-radius: 4px; margin-top: 10px; border-left: 3px solid var(--gold); }
     </style>
 </head>
 <body>
 
-<div class="wrapper" id="main-content">
-    <div class="panel">
-        <h3>1. LED Panel Selection</h3>
-        <div class="input-group">
-            <label>PRODUCT SERIES</label>
-            <select id="modelSelect" onchange="calculate()">
-                <option value="176,176,500,500,8.5,160">Black Pearl BP2V2 (P2.8)</option>
-                <option value="88,88,500,500,9,140">Carbon CB5 (P5.7)</option>
-                <option value="320,320,500,500,8,150">Ruby RB1.5 (P1.5)</option>
-                <option value="168,168,600,600,10,180">Jasper J6 (P3.5)</option>
-            </select>
-        </div>
-
-        <h3>2. Screen Configuration</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="input-group">
-                <label>COLUMNS (Horizontal)</label>
-                <input type="number" id="cols" value="12" oninput="calculate()">
+<div class="app-container" id="pdf-area">
+    <div class="card">
+        <h2>System Setup</h2>
+        <div class="input-row">
+            <div>
+                <label>LED PANEL MODEL</label>
+                <select id="model" onchange="calc()">
+                    <option value="176,176,0.5,0.5,9.3,190,95">BP2V2 (P2.84)</option>
+                    <option value="88,88,0.5,0.5,9.0,140,70">CB5 (P5.77)</option>
+                    <option value="320,320,0.5,0.5,8.0,150,75">Ruby RB1.5 (P1.56)</option>
+                </select>
             </div>
-            <div class="input-group">
-                <label>ROWS (Vertical)</label>
-                <input type="number" id="rows" value="8" oninput="calculate()">
+            <div>
+                <label>STRUCTURE</label>
+                <select id="struct" onchange="calc()">
+                    <option value="Hanging">Hanging (吊装)</option>
+                    <option value="Stacking">Stacking (堆装)</option>
+                </select>
             </div>
         </div>
 
-        <div class="input-group">
-            <label>SYSTEM SYSTEM</label>
-            <select id="systemType" onchange="calculate()">
-                <option value="SX40">Brompton Tessera SX40 (4K)</option>
-                <option value="S8">Brompton Tessera S8 (HD)</option>
-            </select>
+        <div class="input-row">
+            <div><label>COLUMNS (Width)</label><input type="number" id="cols" value="14" oninput="calc()"></div>
+            <div><label>ROWS (Height)</label><input type="number" id="rows" value="7" oninput="calc()"></div>
         </div>
 
-        <div class="input-group">
-            <label style="display:inline; cursor:pointer;">
-                <input type="checkbox" id="redundancy" onclick="calculate()"> Enable Redundancy (Full Backup)
-            </label>
+        <h3>Power & Heat (230V)</h3>
+        <div class="spec-grid">
+            <div class="spec-item">Max Consumption: <b id="pMax">0 kW</b></div>
+            <div class="spec-item">Total Amps: <b id="pAmp">0 A</b></div>
+            <div class="spec-item">Min Circuits: <b id="pCirc">0</b></div>
+            <div class="spec-item">Heat Output: <b id="pBTU">0 BTU</b></div>
         </div>
+
+        <h3>Processing (Brompton/Helios Logic)</h3>
+        <div class="spec-grid">
+            <div class="spec-item">Resolution: <b id="vRes">0x0</b></div>
+            <div class="spec-item">Port Load: <b id="vLoad">0%</b></div>
+            <div class="spec-item">Frame Rate: <b>60Hz</b></div>
+            <div class="spec-item">Bit Depth: <b>12bit</b></div>
+        </div>
+        <p class="warning" id="loadWarn">⚠️ PORT OVERLOAD: Reduce panels per string!</p>
     </div>
 
-    <div class="sidebar">
-        <h3>Technical Summary</h3>
-        <div class="result-item">Resolution: <b id="outRes">0 x 0</b></div>
-        <div class="result-item">Total Pixels: <b id="outPix">0 M</b></div>
-        <div class="result-item">Dimensions: <b id="outDim">0 x 0 m</b></div>
-        <div class="result-item">Total Area: <b id="outArea">0 m²</b></div>
-        <div class="result-item">Total Weight: <b id="outWeight">0 kg</b></div>
-        <div class="result-item">Max Power: <b id="outPower">0 kW</b></div>
-        
-        <h3 style="margin-top:20px;">Hardware Required</h3>
-        <div class="result-item">Processor Units: <b id="outProc">0</b></div>
-        <div class="result-item">Tessera XD Boxes: <b id="outXD">0</b></div>
-        
-        <div class="topo-graph" id="outTopo"></div>
-        <button class="btn-export" onclick="exportPDF()">DOWNLOAD PDF</button>
+    <div class="card" style="background: #111;">
+        <h3>Equipment List</h3>
+        <div class="equipment-list" id="eqList"></div>
+
+        <h3>System Topology</h3>
+        <div class="topo-graph" id="topoGraph">
+            <div class="topo-box" id="topoTxt"></div>
+        </div>
+
+        <button class="btn-main" onclick="exportPDF()">Export Official PDF</button>
     </div>
 </div>
 
 <script>
-    function calculate() {
-        // 解析选中的屏体数据
-        const data = document.getElementById('modelSelect').value.split(',').map(Number);
-        const [pxW, pxH, mmW, mmH, weight, power] = data;
-        
+    function calc() {
+        const [pxW, pxH, mW, mH, kg, wMax, wAvg] = document.getElementById('model').value.split(',').map(Number);
         const cols = parseInt(document.getElementById('cols').value) || 0;
         const rows = parseInt(document.getElementById('rows').value) || 0;
-        const system = document.getElementById('systemType').value;
-        const isRedun = document.getElementById('redundancy').checked;
+        const totalPanels = cols * rows;
 
-        // 物理与像素计算
-        const totalPxW = cols * pxW;
-        const totalPxH = rows * pxH;
-        const totalPixels = totalPxW * totalPxH;
-        const totalArea = (cols * mmW * rows * mmH) / 1000000;
-        const totalWeight = (cols * rows * weight).toFixed(1);
-        const totalPower = ((cols * rows * power) / 1000).toFixed(2);
-
-        // Brompton 逻辑 (对标官方)
-        let procNeeded = 1;
-        let xdNeeded = 1;
+        // 1. 物理与像素 [cite: 268, 270]
+        const resW = cols * pxW;
+        const resH = rows * pxH;
+        const area = (cols * mW * rows * mH).toFixed(2);
         
-        // SX40 逻辑: 4K 系统支持约 8.8M 像素，S8 约 2M 像素
-        const capacity = (system === "SX40") ? 7000000 : 2000000; 
-        procNeeded = Math.ceil(totalPixels / capacity);
-        
-        // 每个 XD 盒管理约 2M 像素 (10个千兆口)
-        xdNeeded = Math.ceil(totalPixels / 2000000);
-        
-        if (isRedun) {
-            procNeeded *= 2;
-            xdNeeded *= 2;
-        }
+        // 2. 电力逻辑 (对标 PDF Page 2) [cite: 303, 304, 309]
+        const totalWMax = (totalPanels * wMax / 1000).toFixed(2);
+        const amps = (totalWMax * 1000 / 230).toFixed(2);
+        const circuits = Math.ceil(amps / 14); // 官方建议每路 14A [cite: 309]
+        const btu = (totalPanels * 630).toLocaleString(); // BP2V2 Max BTU [cite: 286]
 
-        // 更新界面
-        document.getElementById('outRes').innerText = `${totalPxW} x ${totalPxH}`;
-        document.getElementById('outPix').innerText = (totalPixels / 1000000).toFixed(2) + " M";
-        document.getElementById('outDim').innerText = `${(cols * mmW / 1000).toFixed(2)} x ${(rows * mmH / 1000).toFixed(2)} m`;
-        document.getElementById('outArea').innerText = totalArea.toFixed(2) + " m²";
-        document.getElementById('outWeight').innerText = totalWeight + " kg";
-        document.getElementById('outPower').innerText = totalPower + " kW";
-        document.getElementById('outProc').innerText = procNeeded + " x " + system;
-        document.getElementById('outXD').innerText = xdNeeded + " x XD";
+        // 3. 处理器逻辑 (对标 PDF Page 4) [cite: 341, 348]
+        // 12bit/60Hz 下，单网口上限约 13 个 BP2V2 模组
+        const panelsPerPort = rows; 
+        const loadPct = ((panelsPerPort / 13) * 100).toFixed(1);
 
-        // 生成简易拓扑
-        let topo = `[VIDEO SOURCE]\n   │\n[${system} MAIN] x${isRedun ? procNeeded/2 : procNeeded}\n`;
-        if(isRedun) topo += `[${system} BACKUP]\n   │\n`;
-        topo += `   ▼ (10G Fiber)\n[Tessera XD] x${xdNeeded}\n   │\n   ▼ (Cat6/Sub-fixtures)\n[ROE LED WALL]`;
-        document.getElementById('outTopo').innerText = topo;
+        // 4. 设备清单 (对标 PDF Page 7) [cite: 477, 481, 488]
+        const hangingBars = cols;
+        const totalWeight = (totalPanels * kg + hangingBars * 8.4).toFixed(1);
+
+        // 更新 UI
+        document.getElementById('pMax').innerText = totalWMax + " kW";
+        document.getElementById('pAmp').innerText = amps + " A";
+        document.getElementById('pCirc').innerText = circuits;
+        document.getElementById('pBTU').innerText = btu + " BTU/h";
+        
+        document.getElementById('vRes').innerText = `${resW} x ${resH}`;
+        document.getElementById('vLoad').innerText = loadPct + "%";
+        document.getElementById('loadWarn').style.display = loadPct > 100 ? 'block' : 'none';
+
+        document.getElementById('eqList').innerHTML = `
+            • ${totalPanels}x LED Panels (${totalWeight}kg total)<br>
+            • ${hangingBars}x Hanging Bars (2W Shackle)<br>
+            • ${circuits}x Power Lines (PowerCon True1)<br>
+            • ${cols}x Data Lines (EtherCon Cat5e+)<br>
+            • 1x Helios / SX40 Processor<br>
+            • ${Math.ceil(cols/10)}x EOS / XD Distribution Box
+        `;
+
+        document.getElementById('topoTxt').innerText = 
+            `[VIDEO SOURCE]\n  │\n[PROCESSOR]──(10G)──[DISTRO BOX x${Math.ceil(cols/10)}]\n` +
+            `  │\n  └─(Cat5e)─▶ [${cols} Strings of ${rows} Panels]`;
     }
 
     function exportPDF() {
-        const element = document.getElementById('main-content');
-        html2pdf().from(element).set({
-            margin: 5,
-            filename: 'ROE-Technical-Data.pdf',
+        const element = document.getElementById('pdf-area');
+        const opt = {
+            margin: 10,
+            filename: 'ROE-System-Export.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, backgroundColor: '#0b0b0b' },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        }).save();
+        };
+        html2pdf().set(opt).from(element).save();
     }
 
-    window.onload = calculate;
+    window.onload = calc;
 </script>
 </body>
 </html>
