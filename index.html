@@ -3,97 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROE Visual | 项目智能报价系统</title>
+    <title>ROE Visual | 报价系统</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root {
-            --roe-gold: #c5a059;
-            --roe-black: #0f0f0f;
-            --accent-blue: #0066cc;
-        }
-
-        body { 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            background: radial-gradient(circle at top, #2c2c2c 0%, #0f0f0f 100%); 
-            color: white; min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0;
-        }
-
-        .card { 
-            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);
-            width: 100%; max-width: 480px; padding: 40px; border-radius: 20px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .header { text-align: center; margin-bottom: 30px; }
-        /* 使用 ROE 官网风格的文字 Logo 效果 */
-        .logo { font-size: 28px; font-weight: 800; letter-spacing: 5px; color: #fff; margin-bottom: 5px; }
+        :root { --roe-gold: #c5a059; --roe-black: #0f0f0f; }
+        body { font-family: sans-serif; background: #0f0f0f; color: white; display: flex; justify-content: center; padding: 20px; }
+        .card { background: #1a1a1a; width: 100%; max-width: 400px; padding: 30px; border-radius: 15px; border: 1px solid #333; shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .logo { font-size: 24px; font-weight: bold; letter-spacing: 3px; }
         .logo span { color: var(--roe-gold); }
-        .subtitle { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 2px; }
-
-        .input-item { margin-bottom: 25px; }
-        label { display: block; margin-bottom: 10px; font-size: 13px; color: #bbb; }
-
-        select, input { 
-            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #444; 
-            padding: 12px; border-radius: 8px; color: white; font-size: 16px; transition: 0.3s;
-        }
-
-        select:focus, input:focus { border-color: var(--roe-gold); outline: none; }
-
-        .row { display: flex; gap: 15px; margin-bottom: 25px; }
-        .checkbox-card { 
-            flex: 1; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px;
-            display: flex; align-items: center; font-size: 13px; cursor: pointer; border: 1px solid #333;
-        }
-        .checkbox-card input { width: auto; margin-right: 10px; }
-
-        .btn-main { 
-            background: var(--roe-gold); color: black; border: none; padding: 16px; 
-            border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px;
-            transition: 0.3s; margin-top: 10px;
-        }
-        .btn-main:hover { background: #d4af6a; transform: scale(1.02); }
-
-        .btn-outline {
-            background: transparent; color: #aaa; border: 1px solid #444; padding: 10px;
-            border-radius: 8px; width: 100%; margin-top: 10px; cursor: pointer;
-        }
-
-        #result-box { 
-            margin-top: 30px; padding: 20px; border-radius: 12px;
-            background: rgba(197, 160, 89, 0.1); border: 1px solid rgba(197, 160, 89, 0.3); text-align: center;
-        }
-        .total-label { font-size: 12px; color: var(--roe-gold); text-transform: uppercase; }
-        .total-amount { font-size: 36px; font-weight: bold; margin: 10px 0; color: #fff; }
+        label { display: block; margin: 15px 0 5px; font-size: 12px; color: #888; }
+        select, input { width: 100%; background: #222; border: 1px solid #444; padding: 12px; border-radius: 5px; color: white; box-sizing: border-box; }
+        .row { display: flex; gap: 10px; margin-top: 20px; }
+        .check-item { flex: 1; background: #222; padding: 10px; border-radius: 5px; font-size: 12px; display: flex; align-items: center; cursor: pointer; }
+        .check-item input { width: auto; margin-right: 8px; }
+        .btn-pdf { width: 100%; background: var(--roe-gold); color: black; border: none; padding: 15px; border-radius: 5px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        #result-box { margin-top: 20px; background: rgba(197,160,89,0.1); padding: 20px; border-radius: 10px; text-align: center; border: 1px solid var(--roe-gold); }
+        .total-price { font-size: 28px; font-weight: bold; color: var(--roe-gold); margin-top: 5px; }
     </style>
 </head>
 <body>
 
-<div class="card" id="main-quote">
+<div class="card" id="quote-content">
     <div class="header">
         <div class="logo">ROE<span>VISUAL</span></div>
-        <div class="subtitle">Smart Quotation System</div>
     </div>
 
-    <div class="input-item">
-        <label>PRODUCT SERIES / 产品系列</label>
-        <select id="product">
-            <option value="4200">Black Pearl BP2V2 (XR Specialized)</option>
-            <option value="3500">Carbon Series CB5 (Outdoor)</option>
-            <option value="8800">Ruby RB1.5 (High Resolution)</option>
-            <option value="2900">Van Gogh Series (Creative)</option>
-        </select>
-    </div>
+    <label>PRODUCT / 产品型号</label>
+    <select id="product" onchange="doCalc()">
+        <option value="4200">Black Pearl BP2V2</option>
+        <option value="3500">Carbon Series CB5</option>
+        <option value="8800">Ruby RB1.5</option>
+    </select>
 
-    <div class="input-item">
-        <label>TOTAL AREA / 总面积 (㎡)</label>
-        <input type="number" id="sqm" value="20">
-    </div>
+    <label>AREA / 面积 (㎡)</label>
+    <input type="number" id="sqm" value="10" oninput="doCalc()">
 
     <div class="row">
-        <label class="checkbox-card"><input type="checkbox" id="onsite"> 现场服务</label>
-        <label class="checkbox-card"><input type="checkbox" id="tax"> 13% 税率</label>
+        <label class="check-item"><input type="checkbox" id="onsite" onclick="doCalc()"> 现场服务</label>
+        <label class="check-item"><input type="checkbox" id="tax" onclick="doCalc()"> 13% 税率</label>
     </div>
 
-    <button class="btn-main" onclick="calc()">CALCULATE / 计算报价</button>
-    <button class="btn-outline" onclick="pdf()">
+    <div id="result-box">
+        <div style="font-size: 10px; color: #888;">ESTIMATED TOTAL</div>
+        <div class="total-price" id="price">¥ 0.00</div>
+    </div>
+
+    <button class="btn-pdf" onclick="exportPDF()">DOWNLOAD PDF / 下载报价单</button>
+</div>
+
+<script>
+    // 页面加载时先算一次
+    window.onload = function() { doCalc(); };
+
+    function doCalc() {
+        console.log("正在计算..."); // 用于调试
+        let pricePerSqm = parseFloat(document.getElementById('product').value);
+        let area = parseFloat(document.getElementById('sqm').value) || 0;
+        
+        let total = pricePerSqm * area;
+        
+        if(document.getElementById('onsite').checked) {
+            total += (area * 200); // 假设服务费 200/平
+        }
+        
+        if(document.getElementById('tax').checked) {
+            total *= 1.13;
+        }
+        
+        document.getElementById('price').innerText = "¥ " + total.toLocaleString(undefined, {minimumFractionDigits: 2});
+    }
+
+    function exportPDF() {
+        const element = document.getElementById('quote-content');
+        const opt = {
+            margin: 10,
+            filename: 'ROE-Quote.pdf',
+            html2canvas: { scale: 2, backgroundColor: '#1a1a1a' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>
