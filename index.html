@@ -3,23 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROE Visual | 报价系统</title>
+    <title>ROE Visual | 硬件配置与报价系统</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --roe-gold: #c5a059; --roe-black: #0f0f0f; }
-        body { font-family: sans-serif; background: #0f0f0f; color: white; display: flex; justify-content: center; padding: 20px; }
-        .card { background: #1a1a1a; width: 100%; max-width: 400px; padding: 30px; border-radius: 15px; border: 1px solid #333; shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        .logo { font-size: 24px; font-weight: bold; letter-spacing: 3px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: white; display: flex; justify-content: center; padding: 40px 20px; }
+        .card { background: #1a1a1a; width: 100%; max-width: 600px; padding: 30px; border-radius: 15px; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo { font-size: 26px; font-weight: bold; letter-spacing: 4px; }
         .logo span { color: var(--roe-gold); }
+        
+        .section-title { color: var(--roe-gold); font-size: 14px; margin-top: 25px; border-left: 3px solid var(--roe-gold); padding-left: 10px; text-transform: uppercase; }
         label { display: block; margin: 15px 0 5px; font-size: 12px; color: #888; }
         select, input { width: 100%; background: #222; border: 1px solid #444; padding: 12px; border-radius: 5px; color: white; box-sizing: border-box; }
-        .row { display: flex; gap: 10px; margin-top: 20px; }
-        .check-item { flex: 1; background: #222; padding: 10px; border-radius: 5px; font-size: 12px; display: flex; align-items: center; cursor: pointer; }
-        .check-item input { width: auto; margin-right: 8px; }
-        .btn-pdf { width: 100%; background: var(--roe-gold); color: black; border: none; padding: 15px; border-radius: 5px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        #result-box { margin-top: 20px; background: rgba(197,160,89,0.1); padding: 20px; border-radius: 10px; text-align: center; border: 1px solid var(--roe-gold); }
-        .total-price { font-size: 28px; font-weight: bold; color: var(--roe-gold); margin-top: 5px; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        #system-result { margin-top: 25px; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 10px; border: 1px dashed #444; }
+        .tech-data { font-size: 14px; color: #ddd; margin: 8px 0; display: flex; justify-content: space-between; }
+        .tech-data b { color: var(--roe-gold); }
+        
+        .topo-box { margin-top: 15px; padding: 15px; background: #000; border-radius: 5px; font-family: monospace; font-size: 12px; color: #00ff00; line-height: 1.5; }
+        .btn-pdf { width: 100%; background: var(--roe-gold); color: black; border: none; padding: 15px; border-radius: 5px; font-weight: bold; margin-top: 25px; cursor: pointer; transition: 0.3s; }
+        .btn-pdf:hover { background: #d4af6a; }
     </style>
 </head>
 <body>
@@ -27,64 +32,82 @@
 <div class="card" id="quote-content">
     <div class="header">
         <div class="logo">ROE<span>VISUAL</span></div>
+        <div style="font-size: 10px; color: #666; margin-top: 5px;">Brompton SX40 System Designer</div>
     </div>
 
-    <label>PRODUCT / 产品型号</label>
-    <select id="product" onchange="doCalc()">
-        <option value="4200">Black Pearl BP2V2</option>
-        <option value="3500">Carbon Series CB5</option>
-        <option value="8800">Ruby RB1.5</option>
-    </select>
-
-    <label>AREA / 面积 (㎡)</label>
-    <input type="number" id="sqm" value="10" oninput="doCalc()">
-
-    <div class="row">
-        <label class="check-item"><input type="checkbox" id="onsite" onclick="doCalc()"> 现场服务</label>
-        <label class="check-item"><input type="checkbox" id="tax" onclick="doCalc()"> 13% 税率</label>
+    <div class="section-title">Step 1: LED Parameters</div>
+    <div class="grid">
+        <div>
+            <label>PRODUCT / 型号</label>
+            <select id="pitch" onchange="calcSystem()">
+                <option value="2.8">BP2V2 (P2.8)</option>
+                <option value="5.7">CB5 (P5.7)</option>
+                <option value="1.5">Ruby (P1.5)</option>
+            </select>
+        </div>
+        <div>
+            <label>TOTAL AREA / 面积 (㎡)</label>
+            <input type="number" id="sqm" value="50" oninput="calcSystem()">
+        </div>
     </div>
 
-    <div id="result-box">
-        <div style="font-size: 10px; color: #888;">ESTIMATED TOTAL</div>
-        <div class="total-price" id="price">¥ 0.00</div>
+    <div class="section-title">Step 2: Hardware Requirement</div>
+    <div id="system-result">
+        <div class="tech-data">Total Pixels: <b id="total-pix">0</b></div>
+        <div class="tech-data">Brompton SX40 Main: <b id="sx40-count">0 Unit</b></div>
+        <div class="tech-data">Tessera XD Box: <b id="xd-count">0 Unit</b></div>
+        <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
+        <div style="font-size: 12px; color: var(--roe-gold); margin-bottom: 10px;">Connection Strategy / 拓扑建议:</div>
+        <div class="topo-box" id="topo-text">Waiting for data...</div>
     </div>
 
-    <button class="btn-pdf" onclick="exportPDF()">DOWNLOAD PDF / 下载报价单</button>
+    <button class="btn-pdf" onclick="exportPDF()">DOWNLOAD TECH SPEC / 下载技术清单</button>
 </div>
 
 <script>
-    // 页面加载时先算一次
-    window.onload = function() { doCalc(); };
+    window.onload = function() { calcSystem(); };
 
-    function doCalc() {
-        console.log("正在计算..."); // 用于调试
-        let pricePerSqm = parseFloat(document.getElementById('product').value);
+    function calcSystem() {
+        let p = parseFloat(document.getElementById('pitch').value);
         let area = parseFloat(document.getElementById('sqm').value) || 0;
         
-        let total = pricePerSqm * area;
+        // 1. 计算总像素 (假设 1平米的像素点数 = 1,000,000 / P^2)
+        let pixelsPerSqm = 1000000 / (p * p);
+        let totalPixels = area * pixelsPerSqm;
         
-        if(document.getElementById('onsite').checked) {
-            total += (area * 200); // 假设服务费 200/平
-        }
+        // 2. Brompton SX40 能力计算
+        // 1台 SX40 在 60Hz 约支持 8.8M 像素，但为了冗余，通常建议按 6M-7M 规划
+        let sx40Needed = Math.ceil(totalPixels / 6000000);
         
-        if(document.getElementById('tax').checked) {
-            total *= 1.13;
-        }
+        // 3. XD 盒子计算 (1个 XD 盒支持 10G 输入，通常对应 SX40 的一个口)
+        // 逻辑：每 2M 像素建议增加一个 XD 盒子以优化走线
+        let xdNeeded = Math.ceil(totalPixels / 2000000);
+        if (xdNeeded < sx40Needed) xdNeeded = sx40Needed;
+
+        // 更新界面
+        document.getElementById('total-pix').innerText = (totalPixels / 1000000).toFixed(2) + " M Pixels";
+        document.getElementById('sx40-count').innerText = sx40Needed + " Unit(s)";
+        document.getElementById('xd-count').innerText = xdNeeded + " Unit(s)";
+
+        // 拓扑图逻辑
+        let topo = `[信号源] >> [SX40 主控 x ${sx40Needed}]\n`;
+        topo += `  |__ 光纤连接 (10G)\n`;
+        topo += `       |__ [Tessera XD 盒子 x ${xdNeeded}]\n`;
+        topo += `            |__ 网线连接 (Cat6)\n`;
+        topo += `                 |__ [ROE LED 模组]`;
         
-        document.getElementById('price').innerText = "¥ " + total.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('topo-text').innerText = topo;
     }
 
     function exportPDF() {
         const element = document.getElementById('quote-content');
-        const opt = {
+        html2pdf().from(element).set({
             margin: 10,
-            filename: 'ROE-Quote.pdf',
+            filename: 'ROE-Tech-Spec.pdf',
             html2canvas: { scale: 2, backgroundColor: '#1a1a1a' },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
+        }).save();
     }
 </script>
-
 </body>
 </html>
