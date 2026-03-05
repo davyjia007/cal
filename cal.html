@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>专业项目报价单</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: "Microsoft YaHei", sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 40px; }
+        .container { background: white; width: 600px; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #333; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .checkbox-group { display: flex; gap: 20px; margin: 20px 0; }
+        .checkbox-group label { display: flex; align-items: center; font-weight: normal; cursor: pointer; }
+        .checkbox-group input { width: auto; margin-right: 8px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-bottom: 10px; transition: 0.3s; }
+        .btn-calc { background-color: #007bff; color: white; }
+        .btn-calc:hover { background-color: #0056b3; }
+        .btn-pdf { background-color: #28a745; color: white; }
+        .btn-pdf:hover { background-color: #218838; }
+        #quote-result { margin-top: 20px; padding: 20px; border: 1px dashed #007bff; background: #f0f7ff; }
+        .price-total { font-size: 24px; color: #d32f2f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="printable-area">
+    <h2>项目正式报价单</h2>
+    
+    <div class="input-group">
+        <label>产品型号选择</label>
+        <select id="product_type">
+            <option value="1200">入门级 LED 模组 (¥1200/㎡)</option>
+            <option value="3500">商用级 LED 屏幕 (¥3500/㎡)</option>
+            <option value="8800">小间距 4K 旗舰版 (¥8800/㎡)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>需求面积 (单位：㎡)</label>
+        <input type="number" id="area" value="10" min="1">
+    </div>
+
+    <div class="checkbox-group">
+        <label><input type="checkbox" id="service_fee"> 含安装调试费</label>
+        <label><input type="checkbox" id="tax_included"> 含 13% 税票</label>
+    </div>
+
+    <button class="btn-calc" onclick="updateQuote()">1. 生成实时报价</button>
+    <button class="btn-pdf" onclick="exportToPDF()">2. 导出 PDF 报价单</button>
+
+    <div id="quote-result">
+        <p>项目摘要：<span id="summary">请先点击生成报价</span></p>
+        <p>报价有效期：2026-12-31</p>
+        <hr>
+        <div class="price-total" id="final_price">总计：¥ 0.00</div>
+    </div>
+</div>
+
+<script>
+    function updateQuote() {
+        const base = parseFloat(document.getElementById('product_type').value);
+        const area = parseFloat(document.getElementById('area').value);
+        const hasService = document.getElementById('service_fee').checked;
+        const hasTax = document.getElementById('tax_included').checked;
+        
+        // 核心逻辑计算
+        let total = base * area;
+        if (hasService) total += (area * 200); // 假设每平米安装费200
+        if (hasTax) total *= 1.13;
+
+        // 更新界面
+        const productText = document.getElementById('product_type').options[document.getElementById('product_type').selectedIndex].text;
+        document.getElementById('summary').innerText = productText + " 共 " + area + " ㎡";
+        document.getElementById('final_price').innerText = "总计金额：¥ " + total.toLocaleString(undefined, {minimumFractionDigits: 2});
+    }
+
+    function exportToPDF() {
+        const element = document.getElementById('printable-area');
+        const opt = {
+            margin:       10,
+            filename:     'ROE_Visual_Quote.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        // 执行导出
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>
