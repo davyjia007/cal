@@ -3,154 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROE Visual | Professional System Designer</title>
+    <title>ROE Visual | Pro Cabling Designer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --gold: #c5a059; --bg: #0b0b0b; --panel: #161616; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #ccc; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
-        .card { background: var(--panel); padding: 25px; border-radius: 4px; border: 1px solid #222; }
-        h2, h3 { color: var(--gold); text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
-        h3 { font-size: 14px; margin-top: 20px; }
+        :root { --gold: #c5a059; --bg: #0b0b0b; --card: #1a1a1a; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #ddd; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        .panel { background: var(--card); padding: 20px; border-radius: 4px; border: 1px solid #333; }
+        h2 { color: var(--gold); font-size: 16px; text-transform: uppercase; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
         
-        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        label { display: block; font-size: 11px; color: #777; margin-bottom: 5px; }
-        select, input { width: 100%; background: #000; border: 1px solid #333; padding: 10px; color: #fff; border-radius: 2px; }
+        /* 输入框样式 */
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 11px; color: #888; margin-bottom: 5px; }
+        input, select { width: 100%; background: #000; border: 1px solid #444; padding: 10px; color: #fff; border-radius: 4px; }
         
-        .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; }
-        .spec-item { padding: 8px; background: #0f0f0f; border-radius: 2px; display: flex; justify-content: space-between; }
-        .spec-item b { color: var(--gold); }
-
-        .equipment-list { font-size: 12px; margin-top: 15px; color: #aaa; line-height: 1.6; }
-        .warning { color: #ff4444; font-size: 11px; margin-top: 5px; display: none; }
+        /* 连线图画布 */
+        #cabling-canvas { 
+            background: #fff; /* 模拟 PDF 的白色背景 */
+            border-radius: 4px; 
+            padding: 20px; 
+            overflow-x: auto;
+            min-height: 400px;
+        }
+        .screen-grid { display: inline-grid; gap: 2px; background: #eee; padding: 5px; border: 2px solid #333; }
+        .cell { 
+            width: 45px; height: 45px; background: #fff; border: 1px solid #ccc;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 9px; color: #333; position: relative;
+        }
+        .dot { width: 6px; height: 6px; border-radius: 50%; margin: 2px; }
+        .line { position: absolute; width: 2px; background: #666; z-index: 1; }
         
-        .btn-main { width: 100%; background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; margin-top: 20px; text-transform: uppercase; }
-        .topo-box { font-family: monospace; font-size: 11px; background: #000; color: #4af2a1; padding: 15px; border-radius: 4px; margin-top: 10px; border-left: 3px solid var(--gold); }
+        /* 统计数据 */
+        .stat-box { margin-top: 15px; font-size: 12px; line-height: 1.8; }
+        .stat-box b { color: var(--gold); }
+        .btn-pdf { width: 100%; background: var(--gold); color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="app-container" id="pdf-area">
-    <div class="card">
-        <h2>System Setup</h2>
-        <div class="input-row">
-            <div>
-                <label>LED PANEL MODEL</label>
-                <select id="model" onchange="calc()">
-                    <option value="176,176,0.5,0.5,9.3,190,95">BP2V2 (P2.84)</option>
-                    <option value="88,88,0.5,0.5,9.0,140,70">CB5 (P5.77)</option>
-                    <option value="320,320,0.5,0.5,8.0,150,75">Ruby RB1.5 (P1.56)</option>
-                </select>
+<div class="container" id="main-app">
+    <div class="panel">
+        <h2>Configuration</h2>
+        <div class="input-group">
+            <label>PRODUCT MODEL</label>
+            <select id="model" onchange="renderAll()">
+                <option value="176,176,9.3,190">BP2V2 (P2.8)</option>
+                <option value="88,88,9.0,140">CB5 (P5.7)</option>
+                <option value="320,320,8.0,150">Ruby RB1.5</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>COLUMNS (Width)</label>
+            <input type="number" id="cols" value="14" oninput="renderAll()">
+        </div>
+        <div class="input-group">
+            <label>ROWS (Height)</label>
+            <input type="number" id="rows" value="7" oninput="renderAll()">
+        </div>
+
+        <h2>System Summary</h2>
+        <div class="stat-box" id="stats">
             </div>
-            <div>
-                <label>STRUCTURE</label>
-                <select id="struct" onchange="calc()">
-                    <option value="Hanging">Hanging (吊装)</option>
-                    <option value="Stacking">Stacking (堆装)</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="input-row">
-            <div><label>COLUMNS (Width)</label><input type="number" id="cols" value="14" oninput="calc()"></div>
-            <div><label>ROWS (Height)</label><input type="number" id="rows" value="7" oninput="calc()"></div>
-        </div>
-
-        <h3>Power & Heat (230V)</h3>
-        <div class="spec-grid">
-            <div class="spec-item">Max Consumption: <b id="pMax">0 kW</b></div>
-            <div class="spec-item">Total Amps: <b id="pAmp">0 A</b></div>
-            <div class="spec-item">Min Circuits: <b id="pCirc">0</b></div>
-            <div class="spec-item">Heat Output: <b id="pBTU">0 BTU</b></div>
-        </div>
-
-        <h3>Processing (Brompton/Helios Logic)</h3>
-        <div class="spec-grid">
-            <div class="spec-item">Resolution: <b id="vRes">0x0</b></div>
-            <div class="spec-item">Port Load: <b id="vLoad">0%</b></div>
-            <div class="spec-item">Frame Rate: <b>60Hz</b></div>
-            <div class="spec-item">Bit Depth: <b>12bit</b></div>
-        </div>
-        <p class="warning" id="loadWarn">⚠️ PORT OVERLOAD: Reduce panels per string!</p>
+        <button class="btn-pdf" onclick="exportPDF()">EXPORT PDF REPORT</button>
     </div>
 
-    <div class="card" style="background: #111;">
-        <h3>Equipment List</h3>
-        <div class="equipment-list" id="eqList"></div>
-
-        <h3>System Topology</h3>
-        <div class="topo-graph" id="topoGraph">
-            <div class="topo-box" id="topoTxt"></div>
+    <div class="panel" style="background: #222;">
+        <h2>Suggested Data Cabling (Port View)</h2>
+        <div id="cabling-canvas">
+            <div id="grid-container" class="screen-grid"></div>
         </div>
-
-        <button class="btn-main" onclick="exportPDF()">Export Official PDF</button>
+        <p style="font-size: 10px; color: #888; margin-top: 10px;">
+            * Each color represents a different Data Port (EtherCon). Lines indicate daisy-chaining.
+        </p>
     </div>
 </div>
 
 <script>
-    function calc() {
-        const [pxW, pxH, mW, mH, kg, wMax, wAvg] = document.getElementById('model').value.split(',').map(Number);
+    const COLORS = ['#FFD700', '#FF6347', '#00CED1', '#9370DB', '#32CD32', '#FFA500', '#1E90FF', '#FF69B4'];
+
+    function renderAll() {
         const cols = parseInt(document.getElementById('cols').value) || 0;
         const rows = parseInt(document.getElementById('rows').value) || 0;
+        const [px, py, kg, watt] = document.getElementById('model').value.split(',').map(Number);
+
+        // 1. 计算统计数据 (对标 PDF Page 2 & 8)
         const totalPanels = cols * rows;
+        const totalW = (totalPanels * watt / 1000).toFixed(2);
+        const totalWeight = (totalPanels * kg).toFixed(1);
+        const resW = cols * px;
+        const resH = rows * py;
 
-        // 1. 物理与像素 [cite: 268, 270]
-        const resW = cols * pxW;
-        const resH = rows * pxH;
-        const area = (cols * mW * rows * mH).toFixed(2);
-        
-        // 2. 电力逻辑 (对标 PDF Page 2) [cite: 303, 304, 309]
-        const totalWMax = (totalPanels * wMax / 1000).toFixed(2);
-        const amps = (totalWMax * 1000 / 230).toFixed(2);
-        const circuits = Math.ceil(amps / 14); // 官方建议每路 14A [cite: 309]
-        const btu = (totalPanels * 630).toLocaleString(); // BP2V2 Max BTU [cite: 286]
-
-        // 3. 处理器逻辑 (对标 PDF Page 4) [cite: 341, 348]
-        // 12bit/60Hz 下，单网口上限约 13 个 BP2V2 模组
-        const panelsPerPort = rows; 
-        const loadPct = ((panelsPerPort / 13) * 100).toFixed(1);
-
-        // 4. 设备清单 (对标 PDF Page 7) [cite: 477, 481, 488]
-        const hangingBars = cols;
-        const totalWeight = (totalPanels * kg + hangingBars * 8.4).toFixed(1);
-
-        // 更新 UI
-        document.getElementById('pMax').innerText = totalWMax + " kW";
-        document.getElementById('pAmp').innerText = amps + " A";
-        document.getElementById('pCirc').innerText = circuits;
-        document.getElementById('pBTU').innerText = btu + " BTU/h";
-        
-        document.getElementById('vRes').innerText = `${resW} x ${resH}`;
-        document.getElementById('vLoad').innerText = loadPct + "%";
-        document.getElementById('loadWarn').style.display = loadPct > 100 ? 'block' : 'none';
-
-        document.getElementById('eqList').innerHTML = `
-            • ${totalPanels}x LED Panels (${totalWeight}kg total)<br>
-            • ${hangingBars}x Hanging Bars (2W Shackle)<br>
-            • ${circuits}x Power Lines (PowerCon True1)<br>
-            • ${cols}x Data Lines (EtherCon Cat5e+)<br>
-            • 1x Helios / SX40 Processor<br>
-            • ${Math.ceil(cols/10)}x EOS / XD Distribution Box
+        document.getElementById('stats').innerHTML = `
+            Resolution: <b>${resW} x ${resH}</b><br>
+            Total Area: <b>${(totalPanels * 0.25).toFixed(2)} m²</b><br>
+            Total Panels: <b>${totalPanels} pcs</b><br>
+            Total Weight: <b>${totalWeight} kg</b><br>
+            Max Power: <b>${totalW} kW</b><br>
+            Data Ports Used: <b>${cols} Ports</b>
         `;
 
-        document.getElementById('topoTxt').innerText = 
-            `[VIDEO SOURCE]\n  │\n[PROCESSOR]──(10G)──[DISTRO BOX x${Math.ceil(cols/10)}]\n` +
-            `  │\n  └─(Cat5e)─▶ [${cols} Strings of ${rows} Panels]`;
+        // 2. 绘制连线图 (对标 PDF Page 5)
+        const grid = document.getElementById('grid-container');
+        grid.style.gridTemplateColumns = `repeat(${cols}, 45px)`;
+        grid.innerHTML = '';
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                
+                // 模拟官方 PDF 的彩色分块逻辑
+                const portColor = COLORS[c % COLORS.length];
+                cell.style.background = `rgba(${parseInt(portColor.slice(1,3),16)}, ${parseInt(portColor.slice(3,5),16)}, ${parseInt(portColor.slice(5,7),16)}, 0.1)`;
+                
+                // 添加上下圆点 (手拉手接口)
+                cell.innerHTML = `
+                    <div class="dot" style="background:${portColor}"></div>
+                    <span style="font-weight:bold">${String.fromCharCode(65 + c)}-${r + 1}</span>
+                    <div class="dot" style="background:${portColor}"></div>
+                `;
+
+                // 画纵向连线 (除了最后一行)
+                if (r < rows - 1) {
+                    const line = document.createElement('div');
+                    line.className = 'line';
+                    line.style.height = '15px';
+                    line.style.bottom = '-8px';
+                    line.style.background = portColor;
+                    cell.appendChild(line);
+                }
+                
+                grid.appendChild(cell);
+            }
+        }
     }
 
     function exportPDF() {
-        const element = document.getElementById('pdf-area');
-        const opt = {
-            margin: 10,
-            filename: 'ROE-System-Export.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#0b0b0b' },
+        const element = document.getElementById('main-app');
+        html2pdf().from(element).set({
+            margin: 5,
+            filename: 'ROE-Cabling-Plan.pdf',
+            html2canvas: { scale: 2 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        };
-        html2pdf().set(opt).from(element).save();
+        }).save();
     }
 
-    window.onload = calc;
+    window.onload = renderAll;
 </script>
 </body>
 </html>
