@@ -2,154 +2,172 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROE Visual | Pro Cabling Designer</title>
+    <title>ROE Visual | Professional System Designer v4.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --gold: #c5a059; --bg: #0b0b0b; --card: #1a1a1a; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #ddd; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: #ccc; margin: 0; padding: 20px; font-size: 13px; }
+        .wrapper { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
         .panel { background: var(--card); padding: 20px; border-radius: 4px; border: 1px solid #333; }
-        h2 { color: var(--gold); font-size: 16px; text-transform: uppercase; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        h2 { color: var(--gold); font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 8px; margin-top: 0; }
         
-        /* 输入框样式 */
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 11px; color: #888; margin-bottom: 5px; }
-        input, select { width: 100%; background: #000; border: 1px solid #444; padding: 10px; color: #fff; border-radius: 4px; }
+        /* 输入控件 */
+        .group { margin-bottom: 15px; }
+        label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; }
+        select, input { width: 100%; background: #000; border: 1px solid #444; padding: 8px; color: #fff; box-sizing: border-box; }
         
-        /* 连线图画布 */
-        #cabling-canvas { 
-            background: #fff; /* 模拟 PDF 的白色背景 */
-            border-radius: 4px; 
-            padding: 20px; 
-            overflow-x: auto;
-            min-height: 400px;
+        /* 结果显示 */
+        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .res-item { background: #111; padding: 10px; border-radius: 2px; border-left: 2px solid var(--gold); }
+        .res-item label { margin-bottom: 2px; }
+        .res-item b { color: #fff; font-size: 14px; }
+
+        /* 连线图绘制 */
+        #cabling-plan { background: #fff; padding: 20px; border-radius: 4px; overflow-x: auto; }
+        .grid-matrix { display: inline-grid; gap: 2px; background: #ddd; padding: 4px; }
+        .module { 
+            width: 40px; height: 40px; background: #fff; border: 1px solid #ccc; font-size: 8px; color: #000;
+            display: flex; align-items: center; justify-content: center; position: relative;
         }
-        .screen-grid { display: inline-grid; gap: 2px; background: #eee; padding: 5px; border: 2px solid #333; }
-        .cell { 
-            width: 45px; height: 45px; background: #fff; border: 1px solid #ccc;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 9px; color: #333; position: relative;
-        }
-        .dot { width: 6px; height: 6px; border-radius: 50%; margin: 2px; }
-        .line { position: absolute; width: 2px; background: #666; z-index: 1; }
-        
-        /* 统计数据 */
-        .stat-box { margin-top: 15px; font-size: 12px; line-height: 1.8; }
-        .stat-box b { color: var(--gold); }
-        .btn-pdf { width: 100%; background: var(--gold); color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .data-line { position: absolute; width: 2px; background: #000; z-index: 5; }
+
+        /* 设备清单样式 */
+        .eq-list { font-size: 11px; color: #aaa; line-height: 1.5; }
+        .eq-list b { color: var(--gold); }
+        .btn-pdf { width: 100%; background: var(--gold); color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container" id="main-app">
+<div class="wrapper" id="capture-area">
     <div class="panel">
-        <h2>Configuration</h2>
-        <div class="input-group">
-            <label>PRODUCT MODEL</label>
-            <select id="model" onchange="renderAll()">
-                <option value="176,176,9.3,190">BP2V2 (P2.8)</option>
-                <option value="88,88,9.0,140">CB5 (P5.7)</option>
-                <option value="320,320,8.0,150">Ruby RB1.5</option>
+        <h2>General Setup</h2>
+        <div class="group">
+            <label>LED PANEL</label>
+            <select id="pModel" onchange="run()">
+                <option value="BP2V2">Black Pearl BP2V2 (P2.84)</option>
+                <option value="RB1.5">Ruby RB1.5 (P1.56)</option>
+                <option value="CB5">Carbon CB5 (P5.77)</option>
             </select>
         </div>
-        <div class="input-group">
-            <label>COLUMNS (Width)</label>
-            <input type="number" id="cols" value="14" oninput="renderAll()">
-        </div>
-        <div class="input-group">
-            <label>ROWS (Height)</label>
-            <input type="number" id="rows" value="7" oninput="renderAll()">
+        <div class="group">
+            <label>COLUMNS x ROWS</label>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="cols" value="14" oninput="run()">
+                <input type="number" id="rows" value="7" oninput="run()">
+            </div>
         </div>
 
-        <h2>System Summary</h2>
-        <div class="stat-box" id="stats">
-            </div>
-        <button class="btn-pdf" onclick="exportPDF()">EXPORT PDF REPORT</button>
+        <h2>Technical Specs</h2>
+        <div class="res-grid">
+            <div class="res-item"><label>Resolution</label><b id="vRes">0x0</b></div>
+            <div class="res-item"><label>Total Area</label><b id="vArea">0 m²</b></div>
+            <div class="res-item"><label>Comfort Distance</label><b id="vDist">0 m</b></div>
+            <div class="res-item"><label>Heat (Max BTU)</label><b id="vBTU">0</b></div>
+            <div class="res-item"><label>Max Current</label><b id="vAmp">0 A</b></div>
+            <div class="res-item"><label>Total Weight</label><b id="vWeight">0 kg</b></div>
+        </div>
+
+        <h2>Equipment List</h2>
+        <div class="eq-list" id="vEq"></div>
+        <button class="btn-pdf" onclick="exportPDF()">Export Official Report</button>
     </div>
 
     <div class="panel" style="background: #222;">
-        <h2>Suggested Data Cabling (Port View)</h2>
-        <div id="cabling-canvas">
-            <div id="grid-container" class="screen-grid"></div>
+        <h2>Suggested Data Cabling (Port Mapping)</h2>
+        <div id="cabling-plan">
+            <div id="grid-container" class="grid-matrix"></div>
         </div>
-        <p style="font-size: 10px; color: #888; margin-top: 10px;">
-            * Each color represents a different Data Port (EtherCon). Lines indicate daisy-chaining.
-        </p>
+        <div style="margin-top:15px; font-size:11px;">
+            <span style="color:var(--gold)">■</span> 12-bit / 60Hz logic applied. Port redundancy: None.
+        </div>
     </div>
 </div>
 
 <script>
+    // 参考 PDF 建立的产品字典
+    const DB = {
+        "BP2V2": { px: 176, kg: 9.3, wMax: 190, pitch: 2.84, btu: 630 },
+        "RB1.5": { px: 320, kg: 8.0, wMax: 150, pitch: 1.56, btu: 510 },
+        "CB5": { px: 88, kg: 9.0, wMax: 140, pitch: 5.77, btu: 480 }
+    };
+
     const COLORS = ['#FFD700', '#FF6347', '#00CED1', '#9370DB', '#32CD32', '#FFA500', '#1E90FF', '#FF69B4'];
 
-    function renderAll() {
+    function run() {
+        const modelKey = document.getElementById('pModel').value;
+        const config = DB[modelKey];
         const cols = parseInt(document.getElementById('cols').value) || 0;
         const rows = parseInt(document.getElementById('rows').value) || 0;
-        const [px, py, kg, watt] = document.getElementById('model').value.split(',').map(Number);
+        const total = cols * rows;
 
-        // 1. 计算统计数据 (对标 PDF Page 2 & 8)
-        const totalPanels = cols * rows;
-        const totalW = (totalPanels * watt / 1000).toFixed(2);
-        const totalWeight = (totalPanels * kg).toFixed(1);
-        const resW = cols * px;
-        const resH = rows * py;
+        // 1. 物理计算 (对标 PDF 第 1, 2, 7 页)
+        const resW = cols * config.px;
+        const resH = rows * config.px;
+        const area = (cols * 0.5 * rows * 0.5).toFixed(2);
+        const weight = (total * config.kg + cols * 8.4).toFixed(1); // 包含吊梁重量
+        const btu = total * config.btu;
+        const amps = ((total * config.wMax) / 230).toFixed(1);
+        const comfortDist = (config.pitch * 1.725).toFixed(1);
 
-        document.getElementById('stats').innerHTML = `
-            Resolution: <b>${resW} x ${resH}</b><br>
-            Total Area: <b>${(totalPanels * 0.25).toFixed(2)} m²</b><br>
-            Total Panels: <b>${totalPanels} pcs</b><br>
-            Total Weight: <b>${totalWeight} kg</b><br>
-            Max Power: <b>${totalW} kW</b><br>
-            Data Ports Used: <b>${cols} Ports</b>
+        // 2. 更新数据面板
+        document.getElementById('vRes').innerText = `${resW} x ${resH}`;
+        document.getElementById('vArea').innerText = area + " m²";
+        document.getElementById('vDist').innerText = comfortDist + " m";
+        document.getElementById('vBTU').innerText = btu.toLocaleString();
+        document.getElementById('vAmp').innerText = amps + " A";
+        document.getElementById('vWeight').innerText = weight + " kg";
+
+        // 3. 线缆与资产清单 (对标 PDF 第 7 页)
+        const powerCircuits = Math.ceil(amps / 12); // 每路电安全载荷 12A
+        document.getElementById('vEq').innerHTML = `
+            <b>LED:</b> ${total}x ${modelKey}<br>
+            <b>Structure:</b> ${cols}x Hanging Bars (8.4kg ea)<br>
+            <b>Power:</b> ${powerCircuits}x First Power (~10m), ${total}x Chain Cables<br>
+            <b>Data:</b> 2x Fiber Kits, ${cols}x First Data (10m), ${total}x Data Chains
         `;
 
-        // 2. 绘制连线图 (对标 PDF Page 5)
-        const grid = document.getElementById('grid-container');
-        grid.style.gridTemplateColumns = `repeat(${cols}, 45px)`;
-        grid.innerHTML = '';
+        // 4. 动态绘制连线图 (对标 PDF 第 8 页)
+        const container = document.getElementById('grid-container');
+        container.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
+        container.innerHTML = '';
 
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                
-                // 模拟官方 PDF 的彩色分块逻辑
                 const portColor = COLORS[c % COLORS.length];
-                cell.style.background = `rgba(${parseInt(portColor.slice(1,3),16)}, ${parseInt(portColor.slice(3,5),16)}, ${parseInt(portColor.slice(5,7),16)}, 0.1)`;
-                
-                // 添加上下圆点 (手拉手接口)
-                cell.innerHTML = `
-                    <div class="dot" style="background:${portColor}"></div>
-                    <span style="font-weight:bold">${String.fromCharCode(65 + c)}-${r + 1}</span>
-                    <div class="dot" style="background:${portColor}"></div>
+                const module = document.createElement('div');
+                module.className = 'module';
+                module.style.backgroundColor = `rgba(${parseInt(portColor.slice(1,3),16)}, 50, 50, 0.05)`;
+                module.innerHTML = `
+                    <div style="width:4px; height:4px; border-radius:2px; background:${portColor}; margin-bottom:2px;"></div>
+                    ${String.fromCharCode(65+c)}-${r+1}
                 `;
-
-                // 画纵向连线 (除了最后一行)
+                
+                // 绘制纵向连线
                 if (r < rows - 1) {
                     const line = document.createElement('div');
-                    line.className = 'line';
-                    line.style.height = '15px';
-                    line.style.bottom = '-8px';
+                    line.className = 'data-line';
+                    line.style.height = '10px';
+                    line.style.bottom = '-6px';
                     line.style.background = portColor;
-                    cell.appendChild(line);
+                    module.appendChild(line);
                 }
-                
-                grid.appendChild(cell);
+                container.appendChild(module);
             }
         }
     }
 
     function exportPDF() {
-        const element = document.getElementById('main-app');
+        const element = document.getElementById('capture-area');
         html2pdf().from(element).set({
             margin: 5,
-            filename: 'ROE-Cabling-Plan.pdf',
-            html2canvas: { scale: 2 },
+            filename: 'ROE-Official-Export.pdf',
+            html2canvas: { scale: 2, backgroundColor: '#0b0b0b' },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         }).save();
     }
 
-    window.onload = renderAll;
+    window.onload = run;
 </script>
 </body>
 </html>
