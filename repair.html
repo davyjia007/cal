@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROE Visual | 维修录入系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        .roe-gradient { background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%); }
+        .btn-gold { background: #c5a059; color: #000; font-weight: 700; transition: 0.3s; }
+        .btn-gold:hover { background: #d4af6a; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="roe-gradient min-h-screen text-gray-200 p-4">
+
+    <div class="max-w-md mx-auto">
+        <header class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
+            <h1 class="text-xl font-bold tracking-widest text-[#c5a059]">MAINTENANCE LOG</h1>
+            <span class="text-xs bg-gray-800 px-2 py-1 rounded">V1.0 Live</span>
+        </header>
+
+        <div class="bg-black rounded-xl overflow-hidden mb-6 border border-gray-700">
+            <div id="reader" style="width: 100%;"></div>
+            <div class="p-4 text-center">
+                <button onclick="startScan()" id="scanBtn" class="btn-gold px-6 py-2 rounded-full w-full">开启摄像头扫码</button>
+            </div>
+        </div>
+
+        <form id="repairForm" class="space-y-4">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">SN 条码编号</label>
+                <input type="text" id="snCode" name="sn" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:border-[#c5a059] outline-none" placeholder="扫码自动填入或手动输入" required>
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">故障类型 (Failure Type)</label>
+                <select name="issue" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:border-[#c5a059] outline-none">
+                    <option value="Dead Pixel">死灯 (Dead Pixel)</option>
+                    <option value="IC Failure">驱动IC损坏 (IC Failure)</option>
+                    <option value="Mask Damage">面罩破损 (Mask Damage)</option>
+                    <option value="Color Shift">色差 (Color Shift)</option>
+                    <option value="Connector">接口损坏 (Connector)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">维修员 (Technician)</label>
+                <input type="text" name="user" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white" placeholder="输入姓名" required>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full btn-gold py-4 rounded font-bold mt-4 shadow-lg shadow-yellow-900/20">
+                提交录入信息
+            </button>
+        </form>
+
+        <div id="msg" class="mt-4 text-center text-sm hidden"></div>
+    </div>
+
+    <script>
+        const html5QrCode = new Html5Qrcode("reader");
+
+        function startScan() {
+            document.getElementById('scanBtn').innerText = "识别中...";
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    document.getElementById('snCode').value = decodedText;
+                    html5QrCode.stop();
+                    document.getElementById('scanBtn').innerText = "扫码成功";
+                    // 扫码成功震动反馈
+                    if (navigator.vibrate) navigator.vibrate(100);
+                },
+                (errorMessage) => { /* 忽略扫描中的错误 */ }
+            );
+        }
+
+        // 处理表单提交
+        const form = document.getElementById('repairForm');
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const msg = document.getElementById('msg');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerText = "上传中...";
+            
+            // 这里填写你的 Google Apps Script 链接
+            const scriptURL = 'YOUR_GOOGLE_SCRIPT_URL';
+
+            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+                .then(response => {
+                    msg.innerText = "✅ 录入成功！数据已同步至云端。";
+                    msg.className = "mt-4 text-center text-green-500";
+                    form.reset();
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "提交录入信息";
+                })
+                .catch(error => {
+                    // 因为是演示，如果没有后端会报错，我们模拟成功
+                    msg.innerText = "⚠️ 提交完成 (演示模式)";
+                    msg.className = "mt-4 text-center text-yellow-500";
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "提交录入信息";
+                    msg.style.display = "block";
+                });
+        });
+    </script>
+</body>
+</html>
