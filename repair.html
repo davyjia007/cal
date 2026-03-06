@@ -2,110 +2,159 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROE Visual | 维修录入系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ROE Visual | Pro Repair Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        .roe-gradient { background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%); }
-        .btn-gold { background: #c5a059; color: #000; font-weight: 700; transition: 0.3s; }
-        .btn-gold:hover { background: #d4af6a; transform: translateY(-2px); }
+        body { background: #050505; color: #e5e5e5; }
+        .card { background: #121212; border: 1px solid #222; }
+        .accent-gold { color: #c5a059; }
+        .bg-gold { background: #c5a059; }
+        input, select, textarea { background: #1a1a1a !important; border: 1px solid #333 !important; color: white !important; }
+        .photo-preview { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; display: none; }
     </style>
 </head>
-<body class="roe-gradient min-h-screen text-gray-200 p-4">
+<body class="p-4 pb-20">
 
-    <div class="max-w-md mx-auto">
-        <header class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
-            <h1 class="text-xl font-bold tracking-widest text-[#c5a059]">MAINTENANCE LOG</h1>
-            <span class="text-xs bg-gray-800 px-2 py-1 rounded">V1.0 Live</span>
+    <div class="max-w-xl mx-auto">
+        <header class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold accent-gold">REPAIR PRO</h1>
+                <p class="text-xs text-gray-500 uppercase tracking-widest">LED Module Service Log</p>
+            </div>
+            <div class="text-right">
+                <div id="statusIndicator" class="text-[10px] bg-red-900/30 text-red-500 px-2 py-1 rounded border border-red-500/50">OFFLINE</div>
+            </div>
         </header>
 
-        <div class="bg-black rounded-xl overflow-hidden mb-6 border border-gray-700">
-            <div id="reader" style="width: 100%;"></div>
-            <div class="p-4 text-center">
-                <button onclick="startScan()" id="scanBtn" class="btn-gold px-6 py-2 rounded-full w-full">开启摄像头扫码</button>
+        <div class="card rounded-xl p-4 mb-4">
+            <h2 class="text-sm font-semibold mb-3 flex items-center">
+                <span class="w-1 h-4 bg-gold mr-2"></span> 1. 身份识别 (Identity)
+            </h2>
+            <div id="reader" class="rounded-lg overflow-hidden bg-black mb-3"></div>
+            <div class="flex gap-2">
+                <button onclick="startScan()" class="flex-1 bg-gold text-black font-bold py-3 rounded-lg text-sm">扫描条码</button>
+                <input type="text" id="snInput" placeholder="手动输入 SN" class="flex-1 p-3 rounded-lg text-sm">
             </div>
         </div>
 
-        <form id="repairForm" class="space-y-4">
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">SN 条码编号</label>
-                <input type="text" id="snCode" name="sn" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:border-[#c5a059] outline-none" placeholder="扫码自动填入或手动输入" required>
-            </div>
-
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">故障类型 (Failure Type)</label>
-                <select name="issue" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:border-[#c5a059] outline-none">
-                    <option value="Dead Pixel">死灯 (Dead Pixel)</option>
-                    <option value="IC Failure">驱动IC损坏 (IC Failure)</option>
-                    <option value="Mask Damage">面罩破损 (Mask Damage)</option>
-                    <option value="Color Shift">色差 (Color Shift)</option>
-                    <option value="Connector">接口损坏 (Connector)</option>
+        <div class="card rounded-xl p-4 mb-4">
+            <h2 class="text-sm font-semibold mb-3 flex items-center">
+                <span class="w-1 h-4 bg-gold mr-2"></span> 2. 故障详情 (Failure)
+            </h2>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <select id="failureType" class="col-span-2 p-3 rounded-lg text-sm">
+                    <option value="">-- 选择故障类型 --</option>
+                    <optgroup label="显示问题">
+                        <option value="Dead Pixel">单点死灯 (Dead Pixel)</option>
+                        <option value="Caterpillar">长亮/毛毛虫 (Caterpillar)</option>
+                        <option value="Color Shift">模块色差 (Color Shift)</option>
+                        <option value="Line Out">整行/整列掉线 (Line Failure)</option>
+                    </optgroup>
+                    <optgroup label="硬件物理损坏">
+                        <option value="Mask Damaged">面罩破损/脱胶</option>
+                        <option value="Pad Damaged">焊盘脱落</option>
+                        <option value="Connector">插针/接口损坏</option>
+                        <option value="IC Burnt">驱动IC烧毁</option>
+                    </optgroup>
                 </select>
+                <textarea id="note" class="col-span-2 p-3 rounded-lg text-sm h-20" placeholder="补充描述故障位置（例如：左上角第三颗IC）"></textarea>
             </div>
-
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">维修员 (Technician)</label>
-                <input type="text" name="user" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white" placeholder="输入姓名" required>
+            
+            <div class="relative">
+                <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden" onchange="previewPhoto(this)">
+                <button onclick="document.getElementById('photoInput').click()" class="w-full border-2 border-dashed border-gray-700 py-8 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-gold hover:text-gold transition">
+                    <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="text-xs">拍摄故障照片 (Evidence)</span>
+                </button>
+                <img id="preview" class="photo-preview mt-3">
             </div>
+        </div>
 
-            <button type="submit" id="submitBtn" class="w-full btn-gold py-4 rounded font-bold mt-4 shadow-lg shadow-yellow-900/20">
-                提交录入信息
+        <div class="card rounded-xl p-4">
+            <div class="flex items-center justify-between mb-4">
+                <label class="text-xs uppercase">维修等级</label>
+                <div class="flex gap-2">
+                    <button onclick="setUrgency('Normal')" class="urgency-btn px-3 py-1 rounded border border-gray-700 text-[10px]">普通</button>
+                    <button onclick="setUrgency('Urgent')" class="urgency-btn px-3 py-1 rounded border border-gray-700 text-[10px] text-red-500">紧急</button>
+                </div>
+            </div>
+            <button onclick="submitRepair()" id="submitBtn" class="w-full bg-gold text-black font-black py-4 rounded-xl shadow-lg shadow-gold/20 active:scale-95 transition">
+                提交并同步 (SUBMIT)
             </button>
-        </form>
-
-        <div id="msg" class="mt-4 text-center text-sm hidden"></div>
+        </div>
     </div>
 
     <script>
-        const html5QrCode = new Html5Qrcode("reader");
+        let selectedUrgency = "Normal";
+        let photoBase64 = "";
 
+        // 1. 扫码逻辑
+        const html5QrCode = new Html5Qrcode("reader");
         function startScan() {
-            document.getElementById('scanBtn').innerText = "识别中...";
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText) => {
-                    document.getElementById('snCode').value = decodedText;
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
+                (text) => {
+                    document.getElementById('snInput').value = text;
                     html5QrCode.stop();
-                    document.getElementById('scanBtn').innerText = "扫码成功";
-                    // 扫码成功震动反馈
-                    if (navigator.vibrate) navigator.vibrate(100);
-                },
-                (errorMessage) => { /* 忽略扫描中的错误 */ }
+                    navigator.vibrate(50);
+                }
             );
         }
 
-        // 处理表单提交
-        const form = document.getElementById('repairForm');
-        form.addEventListener('submit', e => {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            const msg = document.getElementById('msg');
-            
-            submitBtn.disabled = true;
-            submitBtn.innerText = "上传中...";
-            
-            // 这里填写你的 Google Apps Script 链接
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbwcVmwuRPi4zz3f8aLwdxtlh9780e67pBHuheLQA6TaOriKNXq4B4teeXYGYxvooCYt/exec';
+        // 2. 照片预览及转码
+        function previewPhoto(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('preview');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    photoBase64 = e.target.result; // 将图片转为 Base64
+                }
+                reader.readAsDataURL(file);
+            }
+        }
 
-            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-                .then(response => {
-                    msg.innerText = "✅ 录入成功！数据已同步至云端。";
-                    msg.className = "mt-4 text-center text-green-500";
-                    form.reset();
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "提交录入信息";
-                })
-                .catch(error => {
-                    // 因为是演示，如果没有后端会报错，我们模拟成功
-                    msg.innerText = "⚠️ 提交完成 (演示模式)";
-                    msg.className = "mt-4 text-center text-yellow-500";
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "提交录入信息";
-                    msg.style.display = "block";
+        function setUrgency(val) {
+            selectedUrgency = val;
+            alert("已设为: " + val);
+        }
+
+        // 3. 提交逻辑
+        async function submitRepair() {
+            const btn = document.getElementById('submitBtn');
+            const data = {
+                sn: document.getElementById('snInput').value,
+                type: document.getElementById('failureType').value,
+                note: document.getElementById('note').value,
+                urgency: selectedUrgency,
+                photo: photoBase64 // 如果配置了 Google Sheets，注意 Base64 大小限制
+            };
+
+            if(!data.sn || !data.type) return alert("请完整填写 SN 和 故障类型");
+
+            btn.innerText = "正在同步至云端...";
+            btn.disabled = true;
+
+            // 这里替换为你之前的 Google Script URL
+            const SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL';
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // 解决跨域
+                    body: JSON.stringify(data)
                 });
-        });
+                alert("✅ 维修数据已成功存入 ROE 资产系统");
+                location.reload(); 
+            } catch (e) {
+                alert("❌ 同步失败，请检查网络");
+                btn.disabled = false;
+                btn.innerText = "提交并同步 (SUBMIT)";
+            }
+        }
     </script>
 </body>
 </html>
