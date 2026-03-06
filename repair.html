@@ -2,119 +2,106 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROE Visual | 企微录入系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ROE Visual | 维修快速录入</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --gold: #c5a059; --bg: #0b0b0b; }
-        body { background: var(--bg); color: #ddd; font-family: sans-serif; }
-        .form-card { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-        .label-text { color: #888; font-size: 11px; text-transform: uppercase; margin-bottom: 5px; display: block; }
-        input, select, textarea { width: 100%; background: #000; border: 1px solid #444; padding: 10px; color: #fff; border-radius: 4px; outline: none; }
-        .btn-gold { background: var(--gold); color: #000; font-weight: bold; padding: 12px; width: 100%; border-radius: 4px; cursor: pointer; }
-        .coord-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; background: #333; padding: 2px; aspect-ratio: 1/1; margin-top: 10px; }
-        .pixel { background: #111; aspect-ratio: 1/1; }
-        .pixel.active { background: #ff4444; }
+        body { background: var(--bg); color: #ddd; font-family: -apple-system, sans-serif; }
+        .form-card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+        .label-text { color: #888; font-size: 12px; text-transform: uppercase; margin-bottom: 8px; display: block; font-weight: 600; }
+        input, select, textarea { width: 100%; background: #000; border: 1px solid #444; padding: 14px; color: #fff; border-radius: 8px; outline: none; font-size: 16px; }
+        input:focus { border-color: var(--gold); }
+        .btn-gold { background: var(--gold); color: #000; font-weight: 800; padding: 16px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-gold:active { transform: scale(0.97); opacity: 0.9; }
+        .btn-gold:disabled { background: #444; color: #888; }
+        .accent-gold { color: var(--gold); }
     </style>
 </head>
-<body class="p-4">
+<body class="p-4 pb-12">
 
     <div class="max-w-md mx-auto">
-        <h1 style="color:var(--gold)" class="text-xl font-black mb-4 italic tracking-tighter text-center">WECOM REPAIR LINK</h1>
+        <header class="py-8 text-center">
+            <h1 class="text-2xl font-black italic accent-gold tracking-tight">ROE QUICK LOG</h1>
+            <p class="text-[10px] text-gray-500 tracking-[0.3em] mt-1">DIRECT WECOM SYNC</p>
+        </header>
 
         <div class="form-card">
-            <span class="label-text">条码 / Barcode (fz9h3M)</span>
-            <input type="text" id="sn" placeholder="输入模组 SN...">
+            <span class="label-text">条码 / Barcode</span>
+            <input type="text" id="sn" placeholder="点击扫码或输入..." autocomplete="off">
         </div>
 
         <div class="form-card">
-            <span class="label-text">维修内容 (fmCfrG)</span>
+            <span class="label-text">维修内容 / Repair Content</span>
             <select id="repairType">
                 <option value="撞灯刮灯/Impact&Scratch">撞灯刮灯 / Impact & Scratch</option>
                 <option value="灯珠缺陷/LED Defect">灯珠缺陷 / LED Defect</option>
                 <option value="芯片/ IC">芯片维修 / IC Repair</option>
                 <option value="电阻/Resistor">电阻维修 / Resistor</option>
+                <option value="更换面罩/Replace Mask">更换面罩 / Replace Mask</option>
                 <option value="其他维修/Other Repairs">其他维修 / Others</option>
             </select>
         </div>
 
         <div class="form-card">
-            <span class="label-text">故障定位坐标 (X, Y)</span>
-            <div class="coord-grid" id="grid"></div>
-            <div class="mt-2 text-xs accent-gold" id="coord_text">已选坐标: X:0, Y:0</div>
+            <span class="label-text">数量 / Qty (默认 1)</span>
+            <input type="number" id="qty" value="1" min="0">
         </div>
 
         <div class="form-card">
-            <span class="label-text">备注 (fyzjzn)</span>
-            <textarea id="note" rows="2" placeholder="输入位号或其他补充..."></textarea>
+            <span class="label-text">备注 / Remark</span>
+            <textarea id="note" rows="3" placeholder="填写位号或其他说明..."></textarea>
         </div>
 
-        <button class="btn-gold" id="submitBtn" onclick="submitToWecom()">提交至企业微信表单</button>
-        <p id="msg" class="text-center mt-4 text-xs"></p>
+        <button class="btn-gold shadow-lg shadow-yellow-900/20" id="submitBtn" onclick="submitData()">
+            立即提交 (SUBMIT)
+        </button>
+        
+        <p id="msg" class="text-center mt-6 text-sm font-medium"></p>
     </div>
 
 <script>
-    const webhookURL = 'https://qyapi.weixin.qq.com/cgi-bin/wedoc/smartsheet/webhook?key=66mDSWD8ZNqiYuD3ZDrWklLjNcvv87hnfAcWar0oF7DqicO53fDldEBgdVlMNHjOjbEZrBH45FNYI8WoMh1wia57Db096cAIagJpjrgAYKn4';
+    // 你的 Google 脚本中转地址
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwcVmwuRPi4zz3f8aLwdxtlh9780e67pBHuheLQA6TaOriKNXq4B4teeXYGYxvooCYt/exec';
 
-    let currentX = 0;
-    let currentY = 0;
-
-    // 初始化网格
-    const grid = document.getElementById('grid');
-    for (let i = 0; i < 256; i++) {
-        const p = document.createElement('div');
-        p.className = 'pixel cursor-pointer hover:bg-yellow-600';
-        p.onclick = function() {
-            document.querySelectorAll('.pixel').forEach(el => el.classList.remove('active'));
-            this.classList.add('active');
-            currentX = i % 16;
-            currentY = Math.floor(i / 16);
-            document.getElementById('coord_text').innerText = `已选坐标: X:${currentX}, Y:${currentY}`;
-        };
-        grid.appendChild(p);
-    }
-
-    async function submitToWecom() {
+    async function submitData() {
         const btn = document.getElementById('submitBtn');
         const msg = document.getElementById('msg');
-        const sn = document.getElementById('sn').value;
+        const sn = document.getElementById('sn').value.trim();
 
-        if (!sn) return alert("条码不能为空");
+        if (!sn) {
+            alert("请输入条码！");
+            return;
+        }
 
         btn.disabled = true;
-        msg.innerText = "🚀 正在通过 Webhook 写入企微表格...";
+        msg.innerText = "⏳ 正在同步至企业微信...";
+        msg.style.color = "#888";
 
-        // 构造符合你提供的 Schema 的 JSON 结构
-        const payload = {
-            "add_records": [{
-                "values": {
-                    "fz9h3M": sn, // 条码
-                    "fmCfrG": [{ "text": document.getElementById('repairType').value }], // 维修内容
-                    "fwHoiv": 1, // Qty 默认为 1
-                    "fyzjzn": document.getElementById('note').value, // 备注
-                    "fL5eLt": currentX, // LED1_X
-                    "fhMWiR": currentY, // LED1_Y
-                    "fD0EHe": 1 // LED1_Mask 默认填 1
-                }
-            }]
-        };
+        const params = new URLSearchParams();
+        params.append('sn', sn);
+        params.append('issue', document.getElementById('repairType').value);
+        params.append('qty', document.getElementById('qty').value);
+        params.append('note', document.getElementById('note').value);
 
         try {
-            const response = await fetch(webhookURL, {
+            await fetch(scriptURL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                mode: 'no-cors',
+                body: params
             });
 
-            // 企业微信 Webhook 成功通常返回 {"errcode":0...}
             msg.style.color = "#c5a059";
-            msg.innerText = "✅ 录入成功！请查看企业微信多维表格。";
+            msg.innerHTML = "✅ 提交成功！数据已入库";
+            
+            // 提交成功后只清空条码和备注，方便连续录入
             document.getElementById('sn').value = '';
             document.getElementById('note').value = '';
+            document.getElementById('sn').focus();
+
         } catch (e) {
             msg.style.color = "#ff4444";
-            msg.innerText = "❌ 发送失败，Web端跨域受限，请在企业微信内打开或使用中转服务器。";
-            console.error(e);
+            msg.innerText = "❌ 提交异常，请重试";
         } finally {
             btn.disabled = false;
         }
