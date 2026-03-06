@@ -9,20 +9,18 @@
         :root { --gold: #c5a059; --bg: #0b0b0b; }
         body { background: var(--bg); color: #ddd; font-family: -apple-system, sans-serif; }
         .form-card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
-        .label-text { color: #888; font-size: 12px; margin-bottom: 8px; display: block; letter-spacing: 1px; }
+        .label-text { color: #888; font-size: 12px; margin-bottom: 8px; display: block; }
         input, select, textarea { width: 100%; background: #000; border: 1px solid #444; padding: 12px; color: #fff; border-radius: 8px; outline: none; }
-        input:focus { border-color: var(--gold); }
-        .btn-gold { background: var(--gold); color: #000; font-weight: bold; padding: 16px; width: 100%; border-radius: 8px; transition: 0.3s; }
-        .btn-gold:active { transform: scale(0.98); opacity: 0.8; }
+        .btn-gold { background: var(--gold); color: #000; font-weight: bold; padding: 16px; width: 100%; border-radius: 8px; }
     </style>
 </head>
 <body class="p-4">
     <div class="max-w-md mx-auto">
-        <h1 class="text-xl font-bold text-center mb-6 italic" style="color:var(--gold)">ROE WECOM SYNC</h1>
+        <h1 class="text-xl font-bold text-center mb-6" style="color:var(--gold)">ROE WECOM SYNC</h1>
 
         <div class="form-card">
             <span class="label-text">条码 / Barcode</span>
-            <input type="text" id="sn" placeholder="请扫描或输入条码...">
+            <input type="text" id="sn" placeholder="请输入条码...">
         </div>
 
         <div class="form-card">
@@ -38,29 +36,27 @@
 
         <div class="form-card">
             <span class="label-text">备注 / Remark</span>
-            <textarea id="note" rows="2" placeholder="填写故障位号或详细说明..."></textarea>
+            <textarea id="note" rows="2" placeholder="填写位号..."></textarea>
         </div>
 
         <button class="btn-gold" id="submitBtn" onclick="submitData()">确认提交数据</button>
-        <p id="msg" class="text-center mt-4 text-sm font-medium"></p>
+        <p id="msg" class="text-center mt-4 text-sm"></p>
     </div>
 
 <script>
-    // 【重要】请在此处替换为你最新的 Google 脚本部署 URL (以 /exec 结尾)
-    const scriptURL = '在此处粘贴你的最新URL';
+    // 【重要】请在这里替换为你刚刚复制的、以 /exec 结尾的链接
+    const scriptURL = '在此处粘贴你的最新部署URL';
 
     async function submitData() {
         const btn = document.getElementById('submitBtn');
         const msg = document.getElementById('msg');
         const sn = document.getElementById('sn').value.trim();
 
-        if (!sn) return alert("请输入条码 / Barcode is required");
+        if (!sn) return alert("请输入条码");
 
         btn.disabled = true;
-        msg.innerText = "⏳ 正在同步数据...";
-        msg.style.color = "#888";
+        msg.innerText = "正在同步中...";
 
-        // 使用 URLSearchParams 以确保跨域兼容性更好
         const formData = new URLSearchParams();
         formData.append('sn', sn);
         formData.append('issue', document.getElementById('repairType').value);
@@ -68,30 +64,24 @@
         formData.append('qty', '1');
 
         try {
-            // 注意：去掉 mode: 'no-cors' 才能读取 Google 的回信
-            const response = await fetch(scriptURL, {
+            // 使用简化的 fetch 方式
+            await fetch(scriptURL, {
                 method: 'POST',
+                mode: 'no-cors', // 解决大部分跨域 405 问题
                 body: formData
             });
 
-            const result = await response.text();
-            
-            // 弹出反馈信息
-            alert("系统反馈：\n" + result);
+            // 因为是 no-cors，我们拿不到具体的 response 内容，但如果没报错通常就是发出了
+            msg.style.color = "#c5a059";
+            msg.innerText = "✅ 数据已发送 (请检查 Google Sheet)";
+            document.getElementById('sn').value = '';
+            document.getElementById('note').value = '';
+            alert("提交指令已发出，请稍后检查表格。");
 
-            if (result.includes('"errmsg":"ok"') || result === "Success") {
-                msg.style.color = "#c5a059";
-                msg.innerText = "✅ 数据已成功同步！";
-                document.getElementById('sn').value = '';
-                document.getElementById('note').value = '';
-            } else {
-                msg.style.color = "#ff4444";
-                msg.innerText = "❌ 提交失败，详情见弹窗";
-            }
         } catch (e) {
             msg.style.color = "#ff4444";
-            msg.innerText = "❌ 无法连接服务器，请检查部署权限";
-            alert("网络错误或部署地址无效: " + e.message);
+            msg.innerText = "❌ 提交失败";
+            alert("错误: " + e.message);
         } finally {
             btn.disabled = false;
         }
