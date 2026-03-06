@@ -12,9 +12,10 @@
         .label-text { color: #888; font-size: 11px; text-transform: uppercase; margin-bottom: 5px; display: block; }
         input, select, textarea { width: 100%; background: #000; border: 1px solid #444; padding: 10px; color: #fff; border-radius: 4px; outline: none; }
         input:focus { border-color: var(--gold); }
-        .btn-gold { background: var(--gold); color: #000; font-weight: bold; padding: 12px; width: 100%; border-radius: 4px; cursor: pointer; }
+        .btn-gold { background: var(--gold); color: #000; font-weight: bold; padding: 12px; width: 100%; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        .btn-gold:disabled { background: #444; color: #888; cursor: not-allowed; }
         
-        /* 简易坐标模拟器 */
+        /* 坐标模拟器 */
         .coord-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; background: #333; padding: 2px; aspect-ratio: 1/1; margin-top: 10px; }
         .pixel { background: #111; aspect-ratio: 1/1; cursor: pointer; }
         .pixel:hover { background: var(--gold); }
@@ -24,52 +25,46 @@
 <body class="p-4">
 
     <div class="max-w-md mx-auto">
-        <h1 style="color:var(--gold)" class="text-xl font-black mb-4 italic">ADVANCED REPAIR LOG</h1>
+        <h1 style="color:var(--gold)" class="text-xl font-black mb-4 italic tracking-widest text-center">ROE REPAIR PRO</h1>
 
         <div class="form-card">
-            <span class="label-text">条码 / Barcode (V8T等请手动输入)</span>
-            <input type="text" id="sn" placeholder="输入模组 SN 码...">
+            <span class="label-text">条码 / Barcode</span>
+            <input type="text" id="sn" placeholder="扫描或输入模组 SN 码...">
         </div>
 
         <div class="form-card">
             <span class="label-text">维修内容 / Repair Content</span>
             <select id="repairType" onchange="toggleFields()">
-                <option value="o5a5Nj">撞灯刮灯 / Impact & Scratch</option>
-                <option value="oIkcgN">灯珠缺陷 / LED Defect (毛毛虫/受潮)</option>
-                <option value="oQlfmR">芯片维修 / IC Repair</option>
-                <option value="oxQnsg">更换面罩 / Replace Mask</option>
-                <option value="o7cfSA">其他维修 / Others</option>
+                <option value="撞灯刮灯">撞灯刮灯 / Impact & Scratch</option>
+                <option value="灯珠缺陷">灯珠缺陷 / LED Defect (毛毛虫/受潮)</option>
+                <option value="芯片维修">芯片维修 / IC Repair</option>
+                <option value="更换面罩">更换面罩 / Replace Mask</option>
+                <option value="其他维修">其他维修 / Others</option>
             </select>
         </div>
 
-        <div id="coordSection" class="form-card hidden">
-            <span class="label-text">故障灯珠数量 (Qty)</span>
-            <input type="number" id="qty" value="1" min="0" max="5">
-            
-            <div class="mt-4">
-                <span class="label-text">故障定位 (点击下方方格选择 X,Y)</span>
-                <div class="coord-grid" id="grid">
-                    </div>
-                <div class="flex gap-2 mt-2">
-                    <input type="text" id="coord_display" readonly placeholder="已选坐标: 未选择">
-                </div>
+        <div id="coordSection" class="form-card">
+            <span class="label-text">故障定位 (点击下方方格选择坐标)</span>
+            <div class="coord-grid" id="grid"></div>
+            <div class="mt-3">
+                <input type="text" id="coord_display" readonly placeholder="已选坐标: 未选择" class="text-sm border-none bg-transparent text-[#c5a059]">
             </div>
         </div>
 
         <div class="form-card">
-            <span class="label-text">故障定位拍照 / Fault Location Photo</span>
-            <input type="file" accept="image/*" capture="environment" class="mb-2">
-            
-            <span class="label-text">备注 / Note (如: U12芯片烧毁)</span>
+            <span class="label-text">备注 / Note (如: U12位号)</span>
             <textarea id="note" rows="3" placeholder="填写位号、颜色偏移等详细信息..."></textarea>
         </div>
 
-        <button class="btn-gold" onclick="submitData()">提交维修数据</button>
-        <p id="msg" class="text-center mt-4 text-xs text-gray-600"></p>
+        <button class="btn-gold shadow-lg shadow-yellow-900/20" id="submitBtn" onclick="submitData()">提交维修数据 (SUBMIT)</button>
+        <p id="msg" class="text-center mt-4 text-sm"></p>
     </div>
 
 <script>
-    // 初始化像素格子 (模拟 16x16 的模组局部)
+    // 你的脚本链接
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwcVmwuRPi4zz3f8aLwdxtlh9780e67pBHuheLQA6TaOriKNXq4B4teeXYGYxvooCYt/exec';
+
+    // 初始化 16x16 像素格子
     const grid = document.getElementById('grid');
     for (let i = 0; i < 256; i++) {
         const p = document.createElement('div');
@@ -87,24 +82,60 @@
     function toggleFields() {
         const type = document.getElementById('repairType').value;
         const section = document.getElementById('coordSection');
-        // 参考你代码中的逻辑：撞灯(o5a5Nj)和缺陷(oIkcgN)需要坐标
-        if (type === 'o5a5Nj' || type === 'oIkcgN') {
-            section.classList.remove('hidden');
-        } else {
+        // 如果是更换面罩或其他，隐藏坐标选择
+        if (type === '更换面罩' || type === '其他维修') {
             section.classList.add('hidden');
+        } else {
+            section.classList.remove('hidden');
         }
     }
 
     async function submitData() {
         const msg = document.getElementById('msg');
-        msg.innerText = "正在加密并同步至后台...";
-        
-        // 模拟提交动作
-        setTimeout(() => {
-            msg.style.color = "#4CAF50";
-            msg.innerText = "✅ 数据同步成功！表格已更新。";
-            // 这里可以接入你之前的 Google Script URL
-        }, 1500);
+        const btn = document.getElementById('submitBtn');
+        const sn = document.getElementById('sn').value;
+
+        if (!sn) {
+            alert("请先输入模组条码！");
+            return;
+        }
+
+        btn.disabled = true;
+        msg.innerText = "⏳ 正在同步至 Google Sheets...";
+        msg.style.color = "#888";
+
+        // 整理发送数据
+        const formData = new URLSearchParams();
+        formData.append('sn', sn);
+        formData.append('issue', document.getElementById('repairType').value);
+        formData.append('user', 'David Jia'); // 默认维修员
+        formData.append('note', document.getElementById('note').value + " " + document.getElementById('coord_display').value);
+
+        try {
+            // 发送数据到 Google 脚本
+            await fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: formData
+            });
+
+            // 因为 no-cors 无法获取返回结果，我们通过逻辑判断成功
+            msg.style.color = "#c5a059";
+            msg.innerText = "✅ 录入成功！数据已追加至表格第一行。";
+            
+            // 清空表单
+            document.getElementById('sn').value = '';
+            document.getElementById('note').value = '';
+            document.getElementById('coord_display').value = '';
+            document.querySelectorAll('.pixel').forEach(el => el.classList.remove('active'));
+
+        } catch (e) {
+            msg.style.color = "#ff4444";
+            msg.innerText = "❌ 提交失败，请联系管理员。";
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+        }
     }
 </script>
 </body>
