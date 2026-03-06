@@ -46,8 +46,8 @@
     </div>
 
 <script>
-    // 【重要】请在此处替换为你最新的 Google 脚本部署 URL
-    const scriptURL = 'YOUR_NEW_SCRIPT_URL_HERE';
+    // 【重要】请在此处替换为你最新的 Google 脚本部署 URL (以 /exec 结尾)
+    const scriptURL = '在此处粘贴你的最新URL';
 
     async function submitData() {
         const btn = document.getElementById('submitBtn');
@@ -57,9 +57,10 @@
         if (!sn) return alert("请输入条码 / Barcode is required");
 
         btn.disabled = true;
-        msg.innerText = "⏳ 正在同步至企业微信...";
+        msg.innerText = "⏳ 正在同步数据...";
         msg.style.color = "#888";
 
+        // 使用 URLSearchParams 以确保跨域兼容性更好
         const formData = new URLSearchParams();
         formData.append('sn', sn);
         formData.append('issue', document.getElementById('repairType').value);
@@ -67,6 +68,7 @@
         formData.append('qty', '1');
 
         try {
+            // 注意：去掉 mode: 'no-cors' 才能读取 Google 的回信
             const response = await fetch(scriptURL, {
                 method: 'POST',
                 body: formData
@@ -74,21 +76,22 @@
 
             const result = await response.text();
             
-            // 弹出企业微信的真实反馈
+            // 弹出反馈信息
             alert("系统反馈：\n" + result);
 
-            if (result.includes('"errmsg":"ok"')) {
-                msg.style.color = var(--gold);
-                msg.innerText = "✅ 数据已成功存入企微表格！";
+            if (result.includes('"errmsg":"ok"') || result === "Success") {
+                msg.style.color = "#c5a059";
+                msg.innerText = "✅ 数据已成功同步！";
                 document.getElementById('sn').value = '';
                 document.getElementById('note').value = '';
             } else {
                 msg.style.color = "#ff4444";
-                msg.innerText = "❌ 企微拒绝写入，请检查选项匹配";
+                msg.innerText = "❌ 提交失败，详情见弹窗";
             }
         } catch (e) {
-            msg.innerText = "❌ 网络异常，请检查脚本部署权限";
-            alert("错误详情: " + e.message);
+            msg.style.color = "#ff4444";
+            msg.innerText = "❌ 无法连接服务器，请检查部署权限";
+            alert("网络错误或部署地址无效: " + e.message);
         } finally {
             btn.disabled = false;
         }
