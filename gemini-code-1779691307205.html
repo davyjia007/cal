@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>S.S.P.S - 智能备品系统 | Tech Edition</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        /* =================科技风 UI 设定================= */
+        :root {
+            --bg-dark: #0a0e17;
+            --panel-bg: rgba(16, 24, 39, 0.85);
+            --border-glow: #00f0ff;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-cyan: #22d3ee;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, 'Inter', sans-serif; }
+        body { 
+            background: radial-gradient(circle at top right, #111827, var(--bg-dark));
+            margin: 0; padding: 30px 20px; 
+            display: flex; justify-content: center; 
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+        
+        .container { 
+            max-width: 1450px; width: 100%; 
+            background: var(--panel-bg); 
+            backdrop-filter: blur(12px);
+            border-radius: 24px; 
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.05), inset 0 0 20px rgba(0, 240, 255, 0.02);
+            padding: 36px 40px; 
+        }
+
+        h1 { 
+            font-size: 2rem; font-weight: 800; margin: 0 0 8px; 
+            background: linear-gradient(90deg, var(--border-glow), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+        
+        .sub { 
+            color: var(--text-muted); border-left: 3px solid var(--accent-cyan); 
+            padding-left: 14px; margin-bottom: 30px; font-size: 0.9rem; font-family: monospace;
+        }
+
+        /* 搜索 & 下拉区 */
+        .search-section { 
+            background: rgba(15, 23, 42, 0.6); 
+            border-radius: 20px; padding: 20px 24px; margin-bottom: 30px; 
+            border: 1px solid rgba(255,255,255,0.05); 
+        }
+        
+        .search-wrapper { 
+            display: flex; align-items: center; 
+            background: rgba(0, 0, 0, 0.4); 
+            border-radius: 40px; 
+            border: 1px solid rgba(34, 211, 238, 0.3); 
+            transition: all 0.3s ease; 
+        }
+        
+        .search-wrapper:focus-within { 
+            border-color: var(--border-glow); 
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); 
+        }
+        
+        .product-input { 
+            flex: 1; padding: 14px 24px; font-size: 1rem; color: #fff;
+            border: none; background: transparent; outline: none; font-weight: 500; 
+        }
+        
+        .product-input::placeholder { color: #475569; }
+
+        .dropdown-btn { 
+            background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.3);
+            color: var(--accent-cyan); border-radius: 30px; padding: 10px 24px; margin-right: 6px; 
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; 
+            transition: 0.2s;
+        }
+        
+        .dropdown-btn:hover { background: rgba(34, 211, 238, 0.2); box-shadow: 0 0 10px rgba(34, 211, 238, 0.3); }
+
+        /* 模糊搜索联想区域样式 */
+        .search-suggestions { 
+            margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; 
+            padding-left: 10px;
+        }
+        .suggestion-tag { 
+            background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.4);
+            padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; 
+            color: var(--accent-cyan); transition: 0.2s; font-weight: 600;
+        }
+        .suggestion-tag:hover { 
+            background: rgba(34, 211, 238, 0.3); box-shadow: 0 0 12px rgba(34, 211, 238, 0.5); 
+            color: #fff; 
+        }
+
+        .dropdown-panel { 
+            margin-top: 18px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
+            border-radius: 20px; border: 1px solid rgba(34, 211, 238, 0.2); 
+            max-height: 420px; overflow-y: auto; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+        .dropdown-panel.collapsed { display: none; }
+        
+        .category-group { margin: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .category-title { 
+            font-weight: 700; color: var(--accent-cyan); padding: 12px; 
+            cursor: pointer; display: flex; justify-content: space-between; border-radius: 12px; 
+        }
+        .category-title:hover { background: rgba(255,255,255,0.05); }
+        
+        .product-item { margin: 10px 0; border-left: 2px solid rgba(34, 211, 238, 0.3); padding-left: 12px; }
+        .product-header { 
+            color: #94a3b8; font-size: 0.85rem; background: rgba(255,255,255,0.03); 
+            padding: 6px 14px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; 
+        }
+        .product-header:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        
+        .model-list { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 0 10px 20px; }
+        .model-list.collapsed, .products-container.collapsed { display: none; }
+        
+        .model-chip { 
+            background: rgba(0,0,0,0.3); border-radius: 30px; padding: 6px 16px; 
+            font-size: 0.8rem; cursor: pointer; transition: 0.2s; color: #cbd5e1; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        .model-chip:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+        .model-chip.selected { 
+            background: rgba(34, 211, 238, 0.15); color: #fff; 
+            border-color: var(--border-glow); box-shadow: 0 0 10px rgba(0,240,255,0.2); 
+        }
+        
+        /* 控制面板区 */
+        .control-row { 
+            display: flex; flex-wrap: wrap; gap: 24px; margin-top: 36px;
+            background: rgba(0, 0, 0, 0.2); padding: 18px 24px; border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .control-group { 
+            display: flex; align-items: center; gap: 12px; background: rgba(30, 41, 59, 0.5); 
+            padding: 10px 20px; border-radius: 40px; border: 1px solid rgba(56, 189, 248, 0.2); 
+            cursor: pointer; transition: 0.3s;
+        }
+        .control-group:hover { 
+            border-color: var(--accent-cyan); background: rgba(30, 41, 59, 0.8); 
+            box-shadow: 0 0 12px rgba(34, 211, 238, 0.15);
+        }
+        .control-group label, .control-group span { font-weight: 600; color: #cbd5e1; cursor: pointer; }
+        
+        select { 
+            background: #0f172a; color: var(--accent-cyan); border: 1px solid rgba(34,211,238,0.3);
+            padding: 8px 16px; border-radius: 20px; outline: none; cursor: pointer; font-weight: bold;
+        }
+        select:focus { border-color: var(--border-glow); }
+        
+        /* 尺寸输入卡片与矩阵图 */
+        .size-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 10px; }
+        .size-card { 
+            background: rgba(15, 23, 42, 0.6); padding: 16px; border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.08); text-align: center; min-width: 140px; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center;
+        }
+        .size-label { font-weight: 700; font-size: 0.85rem; color: var(--accent-cyan); margin-bottom: 8px; }
+        .size-input { 
+            padding: 8px 12px; border-radius: 30px; border: 1px solid rgba(56,189,248,0.3); 
+            width: 90px; text-align: center; background: rgba(0,0,0,0.3); color: #fff; font-weight: bold; outline: none;
+            margin-top: 12px;
+        }
+        .size-input:focus { border-color: var(--border-glow); box-shadow: 0 0 8px rgba(0,240,255,0.2); }
+
+        .size-matrix { display: inline-flex; flex-direction: column; gap: 4px; margin: 4px 0; }
+        .matrix-row { display: flex; gap: 4px; justify-content: center; }
+        .matrix-cell { 
+            width: 22px; height: 22px; 
+            background-color: rgba(34, 211, 238, 0.8); 
+            border-radius: 4px; display: inline-block; 
+            box-shadow: 0 0 6px rgba(34,211,238,0.4);
+        }
+        .custom-icon { font-size: 1.8rem; margin: 4px 0; }
+
+        /* 表格区 */
+        .spare-table-wrapper { 
+            overflow-x: auto; border-radius: 16px; border: 1px solid rgba(56,189,248,0.2); 
+            margin-top: 24px; background: rgba(0,0,0,0.2);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
+        th, td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        th { background: rgba(15, 23, 42, 0.8); color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px; }
+        tr:hover { background: rgba(34, 211, 238, 0.05); }
+        
+        .qty-free { color: var(--accent-green); font-weight: 700; font-family: monospace; font-size: 1.05rem; }
+        .qty-ext { color: var(--accent-blue); font-weight: 700; font-family: monospace; font-size: 1.05rem; }
+        .qty-buy { color: var(--accent-orange); font-weight: 700; font-family: monospace; font-size: 1.05rem; }
+
+        .btn-excel { 
+            background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; 
+            padding: 12px 32px; border-radius: 40px; font-weight: 700; cursor: pointer; 
+            margin-top: 24px; transition: 0.3s; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+        .btn-excel:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); }
+
+        .status-bar { margin-top: -15px; margin-bottom: 25px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;}
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        .status-dot.active { background: var(--border-glow); box-shadow: 0 0 8px var(--border-glow); }
+        
+        .selected-model-header { 
+            font-weight: 700; color: var(--border-glow); background: rgba(34, 211, 238, 0.1); 
+            display: inline-block; padding: 6px 20px; border-radius: 40px; margin-bottom: 20px; 
+            border: 1px solid rgba(34,211,238,0.2);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>CYBER-BOM 备品运算矩阵</h1>
+    <div class="sub">SYSTEM v2.7.0_BETA // 产品规格解析网络</div>
+    
+    <div class="status-bar" id="dataStatus">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">正在监听本地数据接口 (等待 Spare_Parts.json 挂载)...</span>
+    </div>
+
+    <div class="search-section">
+        <div class="search-wrapper">
+            <input type="text" id="productSearchInput" class="product-input" placeholder=">> 扫描型号，例: GP2.6, EM5.9">
+            <button id="dropdownToggleBtn" class="dropdown-btn">
+                <span>[展开核心目录]</span>
+            </button>
+        </div>
+        <div id="suggestionArea" class="search-suggestions" style="display: none;"></div>
+        <div id="dropdownPanel" class="dropdown-panel collapsed"></div>
+    </div>
+
+    <div id="quantityPanel" style="display: none;">
+        <div id="selectedModelDisplay" class="selected-model-header">NULL</div>
+        <div id="dynamicSizesContainer"></div>
+
+        <div class="control-row">
+            <div class="control-group">
+                <span>[主控系统]</span>
+                <select id="systemSelect">
+                    <option value="Brompton">Brompton</option>
+                    <option value="MVR">MVR</option>
+                    <option value="Nova">Nova</option>
+                    <option value="Colorlight">Colorlight</option>
+                    <option value="Other System">Other System</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <input type="checkbox" id="customSizeCheckbox" style="accent-color: var(--accent-cyan);"> 
+                <label for="customSizeCheckbox">📐 异形定制接入</label>
+            </div>
+            
+            <div class="control-group">
+                <input type="checkbox" id="demoCheckbox" style="accent-color: var(--accent-cyan);"> 
+                <label for="demoCheckbox">🎪 开启展会 Demo</label>
+            </div>
+        </div>
+    </div>
+
+    <div id="spareContainer" style="display: none; margin-top: 30px;">
+        <h3 style="color: var(--border-glow); margin-bottom: 10px;">> 运算结果输出：</h3>
+        <div class="spare-table-wrapper">
+            <table id="spareTable">
+                <thead>
+                    <tr>
+                        <th>物料名称</th>
+                        <th>免费备品</th>
+                        <th>外办数量</th>
+                        <th>建议购买</th>
+                        <th>单位</th>
+                        <th>SAP编码</th>
+                        <th>规则备注</th>
+                    </tr>
+                </thead>
+                <tbody id="spareTbody">
+                    <tr><td colspan="7" style="text-align: center; color: #475569;">等待系统参数输入...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <button id="exportExcelBtn" class="btn-excel">▼ 输出 Excel 数据矩阵</button>
+    </div>
+</div>
+
+<script>
+    // ======================= 数据源设定 =======================
+    const PRODUCT_TREE = {
+        "Rental Products": {
+            "BO/BP": ["BP2V2", "BP2", "BO2", "BO3", "BPC2.8"],
+            "CB": ["CB3", "CB3-H", "CB5", "CB5-H", "CB8", "CB8-H", "CB9", "FE8"],
+            "JET": ["JET1.9(GOB)", "JET2.2", "JET2.2-H", "JET2.6", "JET2.6-H", "JET3.1", "JET3.1-H", "JET3.9", "JET3.9-H"],
+            "OB": ["OB2.6"],
+            "BQ": ["BQ3.9", "BQ3.9-H", "BQ4.6", "BQ4.6-H", "BQ6.2", "BQ6.2-H"],
+            "RB": ["RB1.2F(4in1)", "RB1.5F(4in1)", "RB1.9F(4in1)", "RB1.9BV2", "RB2.2", "RB2.2F", "RB2.6", "RB2.6F (flip chip)"],
+            "JD": ["JDI4.8", "JDI4.8-H", "JDI5.9", "JDI5.9-H", "JDO3.9", "JDO3.9-H", "JDO5.9", "JDO5.9-H"],
+            "EM": ["EM3.9", "EM3.9-H", "EM5.9", "EM5.9-H", "EM8.9", "EM8.9-H"],
+            "RBC": ["RBC1.5F", "RBC1.9BV2", "RBC1.9F", "RBC2.2", "RBC2.3", "RBC2.6", "RBC2.6F"],
+            "TP": ["TP1.5", "TP1.9(4in1)", "TP1.9", "TP2.2", "TP2.6", "TP1.9 GOB", "TP2.6 GOB"],
+            "TPC": ["TPC1.5", "TPC1.9(4in1)", "TPC2.2", "TPC2.6", "TPC1.9 GOB", "TPC2.6 GOB"],
+            "DM": ["DM2.6", "DM3.9", "DM2.6 90° Corner"],
+            "GP": ["GP1.9(4in1)", "GP2.6", "GP2.6(4in1)", "GP2.6-H", "GP2.6-H(4in1)", "GP2.6 Big triangle", "GP2.6 Big triangle(4in1)", "GP2.6 Right Angle", "GP2.6 Right Angle(4in1)", "GP2.6 Round Conner", "GP2.6 Round Conner(4in1)", "GP2.6 Triangle", "GP2.6 Triangle(4in1)", "GP3.1", "GP3.1-H", "GP3.9", "GP3.9-H"],
+            "CB5MK2": ["CB3MKII", "CB3MKII-H", "CB5MKII", "CB5MKII-H", "CB5L MKII", "CB5L MKII-H", "CB8MKII", "CB8MKII-H"],
+            "BM": ["BM2-PC Matte", "BM2V2-PC Matte", "BM4-Mirror", "BM4-Glass", "BM4-Matte", "BM-Triangle", "BM4 Stair", "BM5-PC Matte", "BM5-Glass"],
+            "Vanish": ["V5SMKII", "V8S MKII", "V8S MKII(Japan)", "V80", "Vanish Air Rental Indoor", "V5S V2-V"],
+            "Vanish 8T": ["V8T(Mask)", "V8T-H(Mask)", "V8T GOB", "V8T-H GOB", "V8T-V GOB"],
+            "Vanish Air": ["Vanish Air Rental Outdoor"],
+            "Vanish ST": ["V3ST", "V3ST-H", "V3ST-V", "V3ST-Q", "V3ST-X", "V3ST-Q-X", "V4ST", "V4ST-H", "V4ST-V", "V4ST-Q", "V4ST-X", "V6ST", "V6ST-H", "V6ST-V", "V6ST-Q"],
+            "Magic Cube": ["MC3", "MC5H T2", "MC7H T2", "MC7H HB T2", "MC9H T2", "MC12H T2", "MC18H T2"],
+            "Poplar": ["PO5", "PO6", "PO8", "PO10"],
+            "Diran": ["DR3.91", "DR4.81"],
+            "Ruby-B": ["RBB2.6"],
+            "Topaz-B": ["TPB1.9(4in1)", "TPB2.2", "TPB2.6"]
+        },
+        "Fixed Installation": {
+            "Amber": ["AB1.2", "AB1.5", "AB1.8"],
+            "Coral": ["CR0.9", "CR0.9-H", "CR1.2", "CR1.2-H", "CR1.5", "CR1.5-H"],
+            "Coral S": ["CRS0.9", "CRS1.2", "CRS1.5"],
+            "Denali": ["DL0.7 MIP", "DL0.9 MIP", "DL1.2 MIP"],
+            "Jasper": ["JA2.6", "JA2.6-H", "JA3.9", "JA3.9-H"],
+            "Meru": ["MR1.9", "MR1.9-H", "MR2.6", "MR2.6-H", "MRC1.9"],
+            "Opal": ["OP1.2", "OP3.75"],
+            "Rila": ["Rila0.9", "Rila1.2", "Rila1.5"],
+            "Sapphire": ["SP1.5"],
+            "Sierra": ["SR1.2", "SR1.5", "SR1.5F"]
+        },
+        "Cecoceco": {
+            "ArtMorph": ["AM2 Elite", "AM2 Elite Mini", "AM6 Grande", "AM6 Grande Mini", "AM6 Grande Edge", "AM6 Elite Edge"],
+            "Hybrid": ["Hybrid 15 (MC15)", "Hybrid 15S-Strip", "Hybrid 18"],
+            "LINX": ["LINX9", "LINX12", "LINX18", "LINX25"],
+            "Omni Tube": ["1200mm Omni Tube"],
+            "ROE Strip": ["30Strip", "60Strip", "90Strip", "120Strip"],
+            "Voyager": ["Voyager"]
+        }
+    };
+
+    const MODEL_SIZES = {
+        "JDO3.9": ["Full", "Half"],
+        "JDO5.9": ["Full", "Half"],
+        "JDI5.9": ["Full", "Half"],
+        "JDI4.8": ["Full", "Half"],
+        "EM3.9": ["Full", "Vertical", "Mini", "Quarter"],
+        "EM5.9": ["Full", "Half", "Vertical", "Mini", "Quarter"],
+        "EM8.9": ["Full", "Half", "Vertical"],
+        "CB3MKII": ["Full", "Half"],
+        "CB5MKII": ["Full", "Half"],
+        "CB8MKII": ["Full", "Half"],
+        "V4ST": ["Full"],
+        "V6ST": ["Full"],
+        "V5S V2-V": ["Full"],
+        "V8S MKII": ["Full"],
+        "V8T GOB": ["Full"],
+        "GP2.6": ["Full", "Half", "Quarter", "Edge"],
+        "GP3.1": ["Full", "Half"],
+        "GP3.9": ["Full", "Half"],
+        "BQ3.9": ["Full", "Half", "Quarter"],
+        "BQ4.6": ["Full", "Half"],
+        "BQ6.2": ["Full", "Half"],
+        "BM4-Glass": ["Full"],
+        "BM4-Matte": ["Full"],
+        "BM5-PC Matte": ["Full"],
+        "BM5-Glass": ["Full"],
+        "BP2V2": ["Full"],
+        "OB2.6": ["Full"],
+        "RB1.2F(4in1)": ["Full"],
+        "RB1.5F(4in1)": ["Full"],
+        "RB1.9BV2": ["Full"],
+        "RB2.6": ["Full"],
+        "RBC1.9F": ["Full"],
+        "RBC2.6": ["Full"],
+        "DL0.7 MIP": ["Full"],
+        "MR2.6": ["Full"],
+        "CRS0.9": ["Full"],
+        "CRS1.2": ["Full"],
+        "CR0.9": ["Full"],
+        "CR1.2": ["Full"],
+        "JA2.6": ["Full", "Vertical"],
+        "JA3.9": ["Full", "Vertical"],
+        "AB1.2": ["Full", "Half", "Vertical"],
+        "AB1.5": ["Full", "Half", "Vertical"],
+        "AM2 Elite": ["Full", "Mini", "Edge"],
+        "AM6 Grande": ["Full", "Mini", "Edge"],
+        "Voyager": ["Full"]
+    };
+
+    // 提取所有原始型号供模糊搜索使用
+    let ALL_RAW_MODELS = [];
+    for (const cat of Object.values(PRODUCT_TREE)) {
+        for (const models of Object.values(cat)) {
+            models.forEach(m => ALL_RAW_MODELS.push(m.trim()));
+        }
+    }
+    // 原始型号去重
+    ALL_RAW_MODELS = [...new Set(ALL_RAW_MODELS)].sort();
+
+    function getSizeTypesForModel(model) {
+        let baseModel = cleanModelName(model);
+        if (MODEL_SIZES[baseModel]) return [...MODEL_SIZES[baseModel]];
+        if (MODEL_SIZES[model]) return [...MODEL_SIZES[model]];
+        return ["Full"];
+    }
+
+    function cleanModelName(raw) {
+        return raw.replace(/\s*-\s*H\b/i, '').replace(/\s*-\s*V\b/i, '')
+            .replace(/\s*-\s*Q\b/i, '').replace(/\s*-\s*Quarter\b/i, '').replace(/\s*-\s*Edge\b/i, '')
+            .replace(/\s*-\s*Mini\b/i, '').replace(/\s*-\s*Half\b/i, '').replace(/\s*-\s*Full\b/i, '')
+            .replace(/\s*\(4in1\)/i, '').replace(/\s*\(GOB\)/i, '').replace(/\s*\(flip chip\)/i, '')
+            .replace(/\s*-\s*White LED\b/i, '').replace(/\s*-\s*Black LED\b/i, '').replace(/\s*-\s*Transparent\b/i, '')
+            .replace(/\s*-\s*Solid\b/i, '').replace(/\s*-\s*Mirror\b/i, '').replace(/\s*-\s*Glass\b/i, '')
+            .replace(/\s*-\s*Matte\b/i, '').replace(/\s*-\s*Stair\b/i, '').replace(/\s*-\s*PC Matte\b/i, '')
+            .replace(/\s*-\s*Triangle\b/i, '').replace(/\s*-\s*Right Angle\b/i, '').replace(/\s*-\s*Round Conner\b/i, '')
+            .replace(/\s*-\s*Big triangle\b/i, '').replace(/\s*-\s*90° Corner\b/i, '').replace(/\s*-\s*Round Corner\b/i, '')
+            .replace(/\s*MKII-H\b/i, 'MKII').replace(/\s*MKII-V\b/i, 'MKII').trim();
+    }
+
+    function renderMatrixIcon(sizeType) {
+        const container = document.createElement('div');
+        container.className = 'size-matrix';
+        if (sizeType === "Full") {
+            container.innerHTML = `<div class="matrix-row"><span class="matrix-cell"></span><span class="matrix-cell"></span></div><div class="matrix-row"><span class="matrix-cell"></span><span class="matrix-cell"></span></div>`;
+        } else if (sizeType === "Half") {
+            container.innerHTML = `<div class="matrix-row"><span class="matrix-cell"></span><span class="matrix-cell"></span></div>`;
+        } else if (sizeType === "Vertical") {
+            container.innerHTML = `<div class="matrix-row"><span class="matrix-cell"></span></div><div class="matrix-row"><span class="matrix-cell"></span></div>`;
+        } else if (sizeType === "Quarter" || sizeType === "Mini") {
+            container.innerHTML = `<div class="matrix-row"><span class="matrix-cell"></span></div>`;
+        } else if (sizeType === "Edge") {
+            container.innerHTML = `<div class="matrix-row"><span class="matrix-cell" style="width: 10px; border-radius: 2px;"></span></div><div class="matrix-row"><span class="matrix-cell" style="width: 10px; border-radius: 2px;"></span></div>`;
+        } else {
+            container.innerHTML = `<span class="custom-icon">📐</span>`;
+        }
+        return container;
+    }
+
+    let currentModel = null;           
+    let currentSizeTypes = [];
+    let sizeQuantities = {};
+    let currentSystem = "Brompton";
+    let isDemo = false;
+    let customEnabled = false;
+
+    // DOM Elements
+    const searchInput = document.getElementById('productSearchInput');
+    const dropdownBtn = document.getElementById('dropdownToggleBtn');
+    const dropdownPanel = document.getElementById('dropdownPanel');
+    const suggestionArea = document.getElementById('suggestionArea');
+    const quantityPanel = document.getElementById('quantityPanel');
+    const selectedModelDisplay = document.getElementById('selectedModelDisplay');
+    const dynamicSizesContainer = document.getElementById('dynamicSizesContainer');
+    const customCheckbox = document.getElementById('customSizeCheckbox');
+    const systemSelect = document.getElementById('systemSelect');
+    const demoCheckbox = document.getElementById('demoCheckbox');
+    const spareContainer = document.getElementById('spareContainer');
+    const spareTbody = document.getElementById('spareTbody');
+    const exportBtn = document.getElementById('exportExcelBtn');
+
+    // 渲染去重产品树
+    function renderDropdownTree() {
+        let html = '';
+        for (const [category, products] of Object.entries(PRODUCT_TREE)) {
+            html += `<div class="category-group">
+                        <div class="category-title" data-catkey="${category}">
+                            <span>[+] ${category}</span>
+                        </div>
+                        <div class="products-container collapsed" data-catproducts="${category}">`;
+            for (const [productName, models] of Object.entries(products)) {
+                html += `<div class="product-item">
+                            <div class="product-header">
+                                <span>></span> ${productName}
+                            </div>
+                            <div class="model-list collapsed">`;
+                
+                const uniqueModels = new Map();
+                models.forEach(model => {
+                    const dName = cleanModelName(model);
+                    if(!uniqueModels.has(dName)) uniqueModels.set(dName, model);
+                });
+
+                for (let [displayName, rawModel] of uniqueModels.entries()) {
+                    html += `<span class="model-chip" data-model="${rawModel}">${displayName}</span>`;
+                }
+                html += `</div></div>`;
+            }
+            html += `</div></div>`;
+        }
+        dropdownPanel.innerHTML = html;
+
+        document.querySelectorAll('.category-title').forEach(title => {
+            title.addEventListener('click', () => {
+                title.nextElementSibling.classList.toggle('collapsed');
+            });
+        });
+        document.querySelectorAll('.product-header').forEach(header => {
+            header.addEventListener('click', () => {
+                header.nextElementSibling.classList.toggle('collapsed');
+            });
+        });
+        document.querySelectorAll('.model-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                const model = chip.getAttribute('data-model');
+                document.querySelectorAll('.model-chip').forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+                selectModelAndUpdate(model);
+                dropdownPanel.classList.add('collapsed');
+                suggestionArea.style.display = "none";
+            });
+        });
+    }
+
+    dropdownBtn.addEventListener('click', () => {
+        dropdownPanel.classList.toggle('collapsed');
+        suggestionArea.style.display = "none"; 
+    });
+
+    // ======================= 模糊搜索核心逻辑恢复 =======================
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim().toLowerCase();
+        
+        if (query === "") { 
+            suggestionArea.style.display = "none"; 
+            return; 
+        }
+
+        // 匹配原始型号，并通过 cleanModelName 判断是否包含查询字符
+        const matchedRaw = ALL_RAW_MODELS.filter(raw => cleanModelName(raw).toLowerCase().includes(query)).slice(0, 10);
+        
+        if (matchedRaw.length === 0) { 
+            suggestionArea.style.display = "none"; 
+            return; 
+        }
+
+        // 针对联想结果去重 (比如搜BQ4.6，只显示一个)
+        const uniqueSuggestions = new Map();
+        matchedRaw.forEach(raw => {
+            uniqueSuggestions.set(cleanModelName(raw), raw);
+        });
+
+        suggestionArea.style.display = "flex";
+        let html = '';
+        for (let [dName, rawModel] of uniqueSuggestions.entries()) {
+            html += `<span class="suggestion-tag" data-raw="${rawModel}">🔍 ${dName}</span>`;
+        }
+        suggestionArea.innerHTML = html;
+
+        // 绑定联想词点击事件
+        document.querySelectorAll('.suggestion-tag').forEach(tag => {
+            tag.addEventListener('click', () => {
+                const raw = tag.getAttribute('data-raw');
+                searchInput.value = cleanModelName(raw);
+                selectModelAndUpdate(raw);
+                suggestionArea.style.display = "none";
+                dropdownPanel.classList.add('collapsed');
+            });
+        });
+    });
+
+    // 点击外部隐藏搜索建议
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !suggestionArea.contains(e.target)) {
+            suggestionArea.style.display = "none";
+        }
+    });
+
+    // 模型选择与规格生成
+    function selectModelAndUpdate(model) {
+        currentModel = model;
+        const displayName = cleanModelName(model);
+        searchInput.value = displayName;
+        selectedModelDisplay.innerText = `[当前挂载协议]: ${displayName}`;
+        
+        let rawSizes = getSizeTypesForModel(model);
+        const order = { "Full": 1, "Half": 2, "Vertical": 3, "Quarter": 4, "Mini": 4, "Edge": 5 };
+        rawSizes.sort((a,b) => (order[a] || 99) - (order[b] || 99));
+        
+        currentSizeTypes = rawSizes.map(st => ({ type: st, label: st === "Full" ? `${displayName} (Full)` : `${displayName}-${st}` }));
+        sizeQuantities = {};
+        currentSizeTypes.forEach(s => sizeQuantities[s.type] = 0);
+        
+        if (customEnabled) {
+            sizeQuantities["Custom"] = 0;
+            if (!currentSizeTypes.some(s => s.type === "Custom")) currentSizeTypes.push({ type: "Custom", label: `[异形/定制模块]` });
+        }
+        renderSizeInputs();
+        quantityPanel.style.display = "block";
+        updateSpareParts();
+    }
+
+    function renderSizeInputs() {
+        dynamicSizesContainer.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'size-grid';
+        currentSizeTypes.forEach(spec => {
+            const card = document.createElement('div');
+            card.className = 'size-card';
+            
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'size-label';
+            labelDiv.innerText = spec.label;
+            card.appendChild(labelDiv);
+            
+            const matrixIcon = renderMatrixIcon(spec.type);
+            card.appendChild(matrixIcon);
+            
+            const input = document.createElement('input');
+            input.type = 'number'; input.min = 0; input.step = 1;
+            input.value = sizeQuantities[spec.type] || 0;
+            input.className = 'size-input';
+            input.setAttribute('data-size-type', spec.type);
+            input.addEventListener('input', (e) => {
+                let val = parseInt(e.target.value, 10);
+                sizeQuantities[spec.type] = isNaN(val) ? 0 : val;
+                updateSpareParts();
+            });
+            card.appendChild(input);
+            
+            grid.appendChild(card);
+        });
+        dynamicSizesContainer.appendChild(grid);
+    }
+
+    // 控件事件监听
+    customCheckbox.addEventListener('change', (e) => {
+        customEnabled = e.target.checked;
+        if (currentModel) selectModelAndUpdate(currentModel);
+    });
+    systemSelect.addEventListener('change', () => { currentSystem = systemSelect.value; updateSpareParts(); });
+    demoCheckbox.addEventListener('change', () => { isDemo = demoCheckbox.checked; updateSpareParts(); });
+
+    function updateSpareParts() {
+        if (!currentModel) return;
+        if (typeof window.computeRealSpareParts === 'function') {
+            spareContainer.style.display = "block";
+            const parts = window.computeRealSpareParts(currentModel, sizeQuantities, currentSystem, isDemo);
+            renderSpareTable(parts);
+        }
+    }
+
+    function renderSpareTable(parts) {
+        if (!parts || parts.length === 0) {
+            spareTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8;">[ 未捕获到匹配的系统数据物料 ]</td></tr>';
+            return;
+        }
+        let html = '';
+        parts.forEach(p => {
+            html += `<tr>
+                <td>${p.物料名称}</td>
+                <td class="qty-free">${p.免费备品}</td>
+                <td class="qty-ext">${p.外办数量}</td>
+                <td class="qty-buy">${p.建议购买}</td>
+                <td>${p.单位}</td>
+                <td>${p.SAP}</td>
+                <td style="font-size:0.8rem; color:#64748b;">${p.备注}</td>
+            </tr>`;
+        });
+        spareTbody.innerHTML = html;
+    }
+
+    // Excel 导出
+    exportBtn.addEventListener('click', () => {
+        if (!currentModel) return;
+        const configRows = [
+            ["产品型号", cleanModelName(currentModel)],
+            ["主控系统", currentSystem],
+            ["展会Demo", isDemo ? "开启" : "关闭"],
+            [], ["规格类型", "数量"]
+        ];
+        currentSizeTypes.forEach(st => configRows.push([st.label, sizeQuantities[st.type] || 0]));
+        
+        const parts = [["物料名称", "免费备品", "外办数量", "建议购买", "单位", "SAP", "备注"]];
+        const rows = spareTbody.querySelectorAll('tr');
+        rows.forEach(r => {
+            const cells = r.querySelectorAll('td');
+            if(cells.length === 7) parts.push(Array.from(cells).map(c => c.innerText));
+        });
+        
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(configRows), "配置参数");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(parts), "备品输出矩阵");
+        XLSX.writeFile(wb, `CyberBOM_${cleanModelName(currentModel)}.xlsx`);
+    });
+
+    // 核心自动挂载逻辑
+    window.bomIndexMap = new Map();
+    document.addEventListener("DOMContentLoaded", () => {
+        renderDropdownTree();
+        
+        fetch('./Spare_Parts.json')
+            .then(res => {
+                if(!res.ok) throw new Error("JSON Fetch Failed");
+                return res.json();
+            })
+            .then(data => {
+                window.registerBomData(data);
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
+                dot.classList.add('active');
+                text.innerText = "数据总线连接正常 (已挂载本地 Spare_Parts.json) [OK]";
+                text.style.color = "var(--border-glow)";
+            })
+            .catch(err => {
+                // 如果本地双击打开，给一个明确的提示
+                if (window.location.protocol === 'file:') {
+                    document.getElementById('statusText').innerText = "提示：由于浏览器本地安全限制，无法直接读取 JSON。请放入 GitHub Pages 或使用 Live Server 运行。";
+                } else {
+                    document.getElementById('statusText').innerText = "未找到 Spare_Parts.json 文件，请确认文件路径是否正确。";
+                }
+            });
+    });
+
+    window.registerBomData = function(bomData) {
+        const map = new Map();
+        bomData.forEach(row => {
+            const model = row.产品型号 || row["产品型号"] || "";
+            const sys = row.系统 || row["系统"] || "";
+            const key = `${model}|${sys}`;
+            if (!map.has(key)) map.set(key, []);
+            map.get(key).push(row);
+        });
+        window.bomIndexMap = map;
+
+        window.computeRealSpareParts = function(model, quantities, system, demo) {
+            const fullQty = quantities["Full"] || 0;
+            const halfQty = quantities["Half"] || 0;
+            const vertQty = quantities["Vertical"] || 0;
+            const quartQty = quantities["Quarter"] || quantities["Mini"] || 0;
+            const customQty = quantities["Custom"] || 0;
+            
+            const totalUnits = (fullQty * 1) + (halfQty * 0.5) + (vertQty * 0.5) + (quartQty * 0.25);
+            
+            if (totalUnits === 0 && customQty === 0 && (quantities["Edge"]||0) === 0) return [];
+
+            const matchedRows = [];
+            for (const [key, rows] of window.bomIndexMap.entries()) {
+                const [m, sys] = key.split('|');
+                if (m !== model) continue;
+                if (sys !== "" && sys !== system) continue;
+                rows.forEach(r => matchedRows.push(r));
+            }
+
+            const unique = new Map();
+            matchedRows.forEach(r => unique.set(`${r.物料名称 || r["物料名称"]}|${r.SAP || r["SAP"]}`, r));
+
+            const result = [];
+            for (const item of unique.values()) {
+                let baseQty = totalUnits;
+                let rawSizeStr = (item.尺寸 || item["尺寸"] || "").trim().toLowerCase();
+                
+                if (rawSizeStr === "full") baseQty = fullQty;
+                else if (rawSizeStr === "half") baseQty = halfQty;
+                else if (rawSizeStr === "vertical") baseQty = vertQty;
+                else if (rawSizeStr === "quarter" || rawSizeStr === "mini") baseQty = quartQty;
+                else if (rawSizeStr === "edge") baseQty = quantities["Edge"] || 0;
+                else if (rawSizeStr.includes("异形") || rawSizeStr === "custom") baseQty = customQty;
+
+                if (baseQty === 0) continue;
+
+                const getFloat = (val) => {
+                    if(!val) return 0;
+                    let v = val.toString().replace('%','');
+                    return (val.toString().includes('%')) ? parseFloat(v)/100 : parseFloat(v);
+                };
+
+                const freeRatio = getFloat(item.免费比例 || item["免费比例"]);
+                const extRatio = getFloat(item.外办比例 || item["外办比例"]);
+                const buyRatio = getFloat(item.购买比例 || item["购买比例"]) || getFloat(item.建议购买 || item["建议购买"]);
+
+                let freeSpares = 0, extSpares = 0, buySpares = 0;
+
+                if (baseQty <= 8) {
+                    freeSpares = 0;
+                    if (buyRatio > 0) buySpares = 1;
+                } else {
+                    freeSpares = Math.ceil(baseQty * freeRatio);
+                    if (freeRatio > 0 && freeSpares < 1) freeSpares = 1;
+                    
+                    extSpares = Math.ceil(baseQty * extRatio);
+                    buySpares = Math.ceil(baseQty * buyRatio);
+                }
+
+                let itemName = item.物料名称 || item["物料名称"] || "";
+                if (demo && (itemName.includes("灯珠") || itemName.includes("面罩"))) {
+                    freeSpares *= 10;
+                    extSpares *= 10;
+                }
+
+                if (freeSpares > 0 || extSpares > 0 || buySpares > 0) {
+                    result.push({
+                        物料名称: itemName,
+                        免费备品: freeSpares,
+                        外办数量: extSpares,
+                        建议购买: buySpares,
+                        单位: item.单位 || item["单位"] || "个",
+                        SAP: item.SAP || item["SAP"] || "",
+                        备注: item.备注 || item["备注"] || ""
+                    });
+                }
+            }
+            return result;
+        };
+        if (currentModel) updateSpareParts();
+    };
+</script>
+</body>
+</html>
